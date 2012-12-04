@@ -1,0 +1,103 @@
+package allocation
+
+import allocation.facts.*
+import allocation.actions.*
+import uk.ac.imperial.presage2.core.IntegerTime
+
+global org.apache.log4j.Logger logger
+
+declare Processed
+	action : TimestampedAction
+end
+
+rule "Max level"
+	salience -11
+	when
+		$pool : CommonPool( resourceLevel > maxLevel, $max : maxLevel)
+	then
+		modify($pool) {
+			setResourceLevel($max);
+		}
+		logger.info("Pool was overfilled, reseting to max level");
+end
+
+rule "Refill pool"
+	salience -10
+	when
+		$t : IntegerTime()
+		$pool : CommonPool($t.intValue() > getLastFilled())
+	then
+		double fillAmount = $pool.getMaxLevel() / 2;
+		int time = $t.intValue();
+		if(time < 50) {
+			fillAmount *= 1;
+		} else if(time < 100) {
+			fillAmount *= 0.95;
+		} else if(time < 150) {
+			fillAmount *= 0.87;
+		} else if(time < 200) {
+			fillAmount *= 0.52;
+		} else if(time < 250) {
+			fillAmount *= 0.92;
+		} else if(time < 300) {
+			fillAmount *= 0.97;
+		} else if(time < 350) {
+			fillAmount *= 0.62;
+		} else if(time < 400) {
+			fillAmount *= 0.90;
+		} else if(time < 450) {
+			fillAmount *= 0.50;
+		} else {
+			fillAmount *= 0.91;
+		}
+		modify($pool) {
+			setResourceLevel( $pool.getResourceLevel() + fillAmount),
+			setLastFilled( time )
+		}
+		logger.info("Fill resource by "+ fillAmount +", pool is now "+ $pool.getResourceLevel() );
+end
+
+rule "Take out of pool"
+	when
+		$a : Appropriate( )
+		not( exists( Processed( $a ;) ) )
+		$pool : CommonPool( )
+	then
+		modify($pool) {
+			setResourceLevel( $pool.getResourceLevel() - $a.amount )
+		}
+		insert( new Processed( $a ) );
+		logger.info($a);
+end
+
+rule "End of the world"
+	when
+		$pool : CommonPool( resourceLevel < 0 )
+	then
+		retract($pool);
+		logger.info("DEPLEATED!!");
+end
+
+rule "Prune Appropriate"
+	when
+		$t : IntegerTime()
+		$a : Appropriate( t < ($t.intValue() - 1) )
+	then
+		retract($a);
+		//logger.info("Prune "+ $a);
+end
+
+rule "Prune Processed"
+	when
+		$p : Processed($a : action)
+		not(exists(TimestampedAction(this == $p.action)))
+	then
+		retract( $p );
+end
+
+rule "Time"
+	when
+		$t : IntegerTime()
+	then
+		logger.info($t);
+end
