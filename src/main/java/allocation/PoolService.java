@@ -46,7 +46,20 @@ public class PoolService extends EnvironmentService {
 
 	public Phase getPoolState(int poolId) {
 		loadPools();
-		return pools.get(poolId).getState();
+		try {
+			return pools.get(poolId).getState();
+		} catch (NullPointerException e) {
+			return null;
+		}
+	}
+
+	public int getRoundNumber(int poolId) {
+		loadPools();
+		try {
+			return pools.get(poolId).getRound();
+		} catch (NullPointerException e) {
+			return 0;
+		}
 	}
 
 }
