@@ -119,8 +119,11 @@ public class Simulation extends InjectedSimulation {
 		t.increment();
 		session.update(session.getFactHandle(t), t);
 		for (CommonPool p : pools) {
-			p.setState(Phase.values()[(p.getState().ordinal() + 1)
-					% Phase.values().length]);
+			Phase next = Phase.values()[(p.getState().ordinal() + 1)
+					% Phase.values().length];
+			p.setState(next);
+			if (next == Phase.CFV)
+				p.incrementRound();
 			session.update(session.getFactHandle(p), p);
 			logger.info(p);
 		}

@@ -11,11 +11,11 @@ public class CommonPool {
 	final int id;
 	double resourceLevel;
 	final double maxLevel;
-	// final RefillRate rate;
 	boolean canRefill = false;
 	int lastFilled = 0;
 	final Institution institution;
 	Phase state = Phase.CFV;
+	int round = 0;
 
 	public CommonPool(int id, double initialLevel, double maxLavel,
 			Institution i) {
@@ -70,10 +70,19 @@ public class CommonPool {
 		this.state = state;
 	}
 
+	public int getRound() {
+		return round;
+	}
+
+	public void incrementRound() {
+		++round;
+	}
+
 	@Override
 	public String toString() {
 		return "CommonPool " + id + " [resourceLevel=" + resourceLevel
-				+ ", maxLevel=" + maxLevel + ", state=" + state +"]";
+				+ ", maxLevel=" + maxLevel + ", state=" + state + " , round="
+				+ round + "]";
 	}
 
 }
