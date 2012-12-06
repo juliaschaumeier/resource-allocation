@@ -8,7 +8,9 @@ import org.drools.runtime.StatefulKnowledgeSession;
 
 import uk.ac.imperial.presage2.core.IntegerTime;
 import uk.ac.imperial.presage2.core.Time;
-import uk.ac.imperial.presage2.core.TimeDriven;
+import uk.ac.imperial.presage2.core.event.EventBus;
+import uk.ac.imperial.presage2.core.event.EventListener;
+import uk.ac.imperial.presage2.core.simulator.EndOfTimeCycle;
 import uk.ac.imperial.presage2.core.simulator.InjectedSimulation;
 import uk.ac.imperial.presage2.core.simulator.Parameter;
 import uk.ac.imperial.presage2.core.simulator.Scenario;
@@ -19,19 +21,16 @@ import uk.ac.imperial.presage2.util.environment.AbstractEnvironmentModule;
 import uk.ac.imperial.presage2.util.network.NetworkModule;
 import allocation.actions.AgentActionHandler;
 import allocation.facts.CommonPool;
-import allocation.facts.CommonPool.RefillRate;
+import allocation.facts.Institution;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 
-public class Simulation extends InjectedSimulation implements TimeDriven {
+public class Simulation extends InjectedSimulation {
 
 	private final Logger logger = Logger.getLogger(Simulation.class);
 	private StatefulKnowledgeSession session;
 	private Time t = new IntegerTime();
-
-	@Parameter(name = "refillRate", optional = true)
-	public String refillRate = "medium";
 
 	@Parameter(name = "agents", optional = true)
 	public int agents = 100;
@@ -47,6 +46,19 @@ public class Simulation extends InjectedSimulation implements TimeDriven {
 	@Parameter(name = "altrMax", optional = true)
 	public double altrMax = 0.0;
 
+	@Parameter(name = "principle2", optional = true)
+	public boolean principle2 = true;
+	@Parameter(name = "principle3", optional = true)
+	public boolean principle3 = true;
+	@Parameter(name = "principle4", optional = true)
+	public boolean principle4 = true;
+	@Parameter(name = "principle5", optional = true)
+	public boolean principle5 = true;
+	@Parameter(name = "principle6", optional = true)
+	public boolean principle6 = true;
+
+	Set<CommonPool> pools = new HashSet<CommonPool>();
+
 	public Simulation(Set<AbstractModule> modules) {
 		super(modules);
 	}
@@ -56,13 +68,21 @@ public class Simulation extends InjectedSimulation implements TimeDriven {
 		this.session = session;
 	}
 
+	@Inject
+	public void eventBusSubscribe(EventBus eb) {
+		eb.subscribe(this);
+	}
+
 	@Override
 	protected Set<AbstractModule> getModules() {
 		Set<AbstractModule> modules = new HashSet<AbstractModule>();
 
-		modules.add(new AbstractEnvironmentModule().addActionHandler(
-				AgentActionHandler.class).setStorage(RuleStorage.class));
-		modules.add(new RuleModule().addClasspathDrlFile("environment.drl"));
+		modules.add(new AbstractEnvironmentModule()
+				.addActionHandler(AgentActionHandler.class)
+				.addParticipantGlobalEnvironmentService(PoolService.class)
+				.setStorage(RuleStorage.class));
+		modules.add(new RuleModule().addClasspathDrlFile("environment.drl")
+				.addClasspathDrlFile("institution.drl"));
 		modules.add(NetworkModule.noNetworkModule());
 
 		return modules;
@@ -70,36 +90,40 @@ public class Simulation extends InjectedSimulation implements TimeDriven {
 
 	@Override
 	protected void addToScenario(Scenario s) {
-		s.addTimeDriven(this);
+
 		session.setGlobal("logger", logger);
-		RefillRate rate;
-		try {
-			rate = RefillRate.valueOf(refillRate);
-		} catch (IllegalArgumentException e) {
-			rate = RefillRate.MEDIUM;
-		}
 		double initialLevel = 2 * standardRequest * agents;
-		session.insert(new CommonPool(initialLevel, initialLevel, rate));
+		CommonPool pool0 = new CommonPool(0, initialLevel, initialLevel,
+				new Institution(principle2, principle3, principle4, principle5,
+						principle6));
+		pools.add(pool0);
+		session.insert(pool0);
 		session.insert(t);
 
 		for (int i = 0; i < agents; i++) {
 			Agent a;
 			if (i < numCheat) {
 				a = new Agent("elf " + i, 1 + greedMax * Random.randomDouble(),
-						standardRequest);
+						standardRequest, 0);
 			} else {
 				a = new Agent("elf " + i, 1 - altrMax * Random.randomDouble(),
-						standardRequest);
+						standardRequest, 0);
 			}
 			s.addParticipant(a);
 			session.insert(a);
 		}
 	}
 
-	@Override
-	public void incrementTime() {
+	@EventListener
+	public void incrementTime(EndOfTimeCycle e) {
 		t.increment();
 		session.update(session.getFactHandle(t), t);
+		for (CommonPool p : pools) {
+			p.setState(Phase.values()[(p.getState().ordinal() + 1)
+					% Phase.values().length]);
+			session.update(session.getFactHandle(p), p);
+			logger.info(p);
+		}
 	}
 
 }

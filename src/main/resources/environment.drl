@@ -1,5 +1,6 @@
 package allocation
 
+import allocation.*
 import allocation.facts.*
 import allocation.actions.*
 import uk.ac.imperial.presage2.core.IntegerTime
@@ -25,7 +26,7 @@ rule "Refill pool"
 	salience -10
 	when
 		$t : IntegerTime()
-		$pool : CommonPool($t.intValue() > getLastFilled())
+		$pool : CommonPool( $t.intValue() > getLastFilled(), state == Phase.Exclude )
 	then
 		double fillAmount = $pool.getMaxLevel() / 2;
 		int time = $t.intValue();
@@ -54,14 +55,16 @@ rule "Refill pool"
 			setResourceLevel( $pool.getResourceLevel() + fillAmount),
 			setLastFilled( time )
 		}
-		logger.info("Fill resource by "+ fillAmount +", pool is now "+ $pool.getResourceLevel() );
+		logger.info("Fill resource by "+ fillAmount +", pool resource level is "+ $pool.getResourceLevel() );
 end
 
 rule "Take out of pool"
 	when
-		$a : Appropriate( )
+		$a : Appropriate( $pid : pool, $ag : player )
 		not( exists( Processed( $a ;) ) )
-		$pool : CommonPool( )
+		not( exists( Appropriate( player == $ag, t > $a.t ) ) )
+		$pool : CommonPool( id == $pid, state == Phase.Appropriate )
+		Agent( this == $ag, getPool() == $pid )
 	then
 		modify($pool) {
 			setResourceLevel( $pool.getResourceLevel() - $a.amount )
@@ -95,9 +98,3 @@ rule "Prune Processed"
 		retract( $p );
 end
 
-rule "Time"
-	when
-		$t : IntegerTime()
-	then
-		logger.info($t);
-end

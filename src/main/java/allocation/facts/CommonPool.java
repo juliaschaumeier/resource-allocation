@@ -1,21 +1,33 @@
 package allocation.facts;
 
+import allocation.Phase;
+
 public class CommonPool {
 
 	public enum RefillRate {
 		LOW, MEDIUM, HIGH
 	};
 
+	final int id;
 	double resourceLevel;
 	final double maxLevel;
-	final RefillRate rate;
+	// final RefillRate rate;
+	boolean canRefill = false;
 	int lastFilled = 0;
+	final Institution institution;
+	Phase state = Phase.CFV;
 
-	public CommonPool(double initialLevel, double maxLavel, RefillRate rate) {
+	public CommonPool(int id, double initialLevel, double maxLavel,
+			Institution i) {
 		super();
+		this.id = id;
 		this.resourceLevel = initialLevel;
 		this.maxLevel = maxLavel;
-		this.rate = rate;
+		this.institution = i;
+	}
+
+	public int getId() {
+		return id;
 	}
 
 	public double getResourceLevel() {
@@ -30,8 +42,12 @@ public class CommonPool {
 		return maxLevel;
 	}
 
-	public RefillRate getRate() {
-		return rate;
+	public boolean isCanRefill() {
+		return canRefill;
+	}
+
+	public void setCanRefill(boolean canRefill) {
+		this.canRefill = canRefill;
 	}
 
 	public int getLastFilled() {
@@ -42,10 +58,22 @@ public class CommonPool {
 		this.lastFilled = lastFilled;
 	}
 
+	public Institution getInstitution() {
+		return institution;
+	}
+
+	public Phase getState() {
+		return state;
+	}
+
+	public void setState(Phase state) {
+		this.state = state;
+	}
+
 	@Override
 	public String toString() {
-		return "CommonPool [resourceLevel=" + resourceLevel + ", maxLevel="
-				+ maxLevel + ", rate=" + rate + "]";
+		return "CommonPool " + id + " [resourceLevel=" + resourceLevel
+				+ ", maxLevel=" + maxLevel + ", state=" + state +"]";
 	}
 
 }
