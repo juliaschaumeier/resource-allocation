@@ -8,6 +8,7 @@ import org.drools.runtime.ObjectFilter;
 import org.drools.runtime.StatefulKnowledgeSession;
 
 import allocation.facts.CommonPool;
+import allocation.facts.Institution;
 
 import com.google.inject.Inject;
 
@@ -60,6 +61,34 @@ public class PoolService extends EnvironmentService {
 		} catch (NullPointerException e) {
 			return 0;
 		}
+	}
+
+	public boolean getIsPoolDepleated(int poolId) {
+		loadPools();
+		try {
+			return pools.get(poolId).isDepleated();
+		} catch (NullPointerException e) {
+			return true;
+		}
+	}
+
+	public Institution getIntitution(int poolId) {
+		loadPools();
+		try {
+			return pools.get(poolId).getInstitution();
+		} catch (NullPointerException e) {
+			return null;
+		}
+	}
+
+	public boolean isVoteOnHead(int poolId) {
+		loadPools();
+		return pools.get(poolId).isVoteHead();
+	}
+
+	public boolean isVoteOnRaMethod(int poolId) {
+		loadPools();
+		return pools.get(poolId).isVoteRaMethod();
 	}
 
 }

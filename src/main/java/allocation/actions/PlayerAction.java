@@ -1,6 +1,6 @@
 package allocation.actions;
 
-import allocation.Agent;
+import allocation.agents.Agent;
 
 abstract class PlayerAction extends TimestampedAction {
 

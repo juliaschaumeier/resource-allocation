@@ -18,7 +18,7 @@ public class Appropriate extends PlayerAction {
 	@Override
 	public String toString() {
 		return "Appropriate [amount=" + amount + ", player=" + player + ", t="
-				+ t + "]";
+				+ round + "]";
 	}
 
 }

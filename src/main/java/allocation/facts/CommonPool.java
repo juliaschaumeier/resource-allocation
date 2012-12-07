@@ -11,11 +11,14 @@ public class CommonPool {
 	final int id;
 	double resourceLevel;
 	final double maxLevel;
-	boolean canRefill = false;
 	int lastFilled = 0;
 	final Institution institution;
 	Phase state = Phase.CFV;
 	int round = 0;
+	boolean depleated = false;
+
+	boolean voteHead = false;
+	boolean voteRaMethod = false;
 
 	public CommonPool(int id, double initialLevel, double maxLavel,
 			Institution i) {
@@ -36,18 +39,13 @@ public class CommonPool {
 
 	public void setResourceLevel(double resourceLevel) {
 		this.resourceLevel = resourceLevel;
+		if (this.resourceLevel < 0) {
+			this.depleated = true;
+		}
 	}
 
 	public double getMaxLevel() {
 		return maxLevel;
-	}
-
-	public boolean isCanRefill() {
-		return canRefill;
-	}
-
-	public void setCanRefill(boolean canRefill) {
-		this.canRefill = canRefill;
 	}
 
 	public int getLastFilled() {
@@ -76,6 +74,26 @@ public class CommonPool {
 
 	public void incrementRound() {
 		++round;
+	}
+
+	public boolean isDepleated() {
+		return depleated;
+	}
+
+	public boolean isVoteHead() {
+		return voteHead;
+	}
+
+	public void setVoteHead(boolean voteHead) {
+		this.voteHead = voteHead;
+	}
+
+	public boolean isVoteRaMethod() {
+		return voteRaMethod;
+	}
+
+	public void setVoteRaMethod(boolean voteRaMethod) {
+		this.voteRaMethod = voteRaMethod;
 	}
 
 	@Override

@@ -9,17 +9,16 @@ import org.apache.log4j.Logger;
 import org.drools.runtime.ObjectFilter;
 import org.drools.runtime.StatefulKnowledgeSession;
 
-import allocation.Agent;
-
-import com.google.inject.Inject;
-
 import uk.ac.imperial.presage2.core.Action;
 import uk.ac.imperial.presage2.core.environment.ActionHandler;
 import uk.ac.imperial.presage2.core.environment.ActionHandlingException;
 import uk.ac.imperial.presage2.core.environment.EnvironmentServiceProvider;
 import uk.ac.imperial.presage2.core.environment.UnavailableServiceException;
 import uk.ac.imperial.presage2.core.messaging.Input;
-import uk.ac.imperial.presage2.core.simulator.SimTime;
+import allocation.PoolService;
+import allocation.agents.Agent;
+
+import com.google.inject.Inject;
 
 public class AgentActionHandler implements ActionHandler {
 
@@ -27,6 +26,7 @@ public class AgentActionHandler implements ActionHandler {
 	final StatefulKnowledgeSession session;
 	Map<UUID, Agent> players = new HashMap<UUID, Agent>();
 	final EnvironmentServiceProvider serviceProvider;
+	PoolService pool = null;
 
 	@Inject
 	public AgentActionHandler(StatefulKnowledgeSession session,
@@ -40,6 +40,18 @@ public class AgentActionHandler implements ActionHandler {
 	@Override
 	public boolean canHandle(Action action) {
 		return action instanceof PlayerAction;
+	}
+
+	PoolService getPoolService() {
+		if (pool == null) {
+			try {
+				pool = this.serviceProvider
+						.getEnvironmentService(PoolService.class);
+			} catch (UnavailableServiceException e) {
+				logger.warn("Couldn't get pool service", e);
+			}
+		}
+		return pool;
 	}
 
 	private synchronized Agent getPlayer(final UUID id) {
@@ -67,7 +79,7 @@ public class AgentActionHandler implements ActionHandler {
 			((PlayerAction) action).setPlayer(p);
 		}
 		if (action instanceof TimestampedAction) {
-			((TimestampedAction) action).setT(SimTime.get().intValue());
+			((TimestampedAction) action).setRound(getPoolService().getRoundNumber(0));
 		}
 		session.insert(action);
 		logger.debug("Handling: " + action);

@@ -20,6 +20,8 @@ import uk.ac.imperial.presage2.rules.RuleStorage;
 import uk.ac.imperial.presage2.util.environment.AbstractEnvironmentModule;
 import uk.ac.imperial.presage2.util.network.NetworkModule;
 import allocation.actions.AgentActionHandler;
+import allocation.agents.Agent;
+import allocation.agents.Role;
 import allocation.facts.CommonPool;
 import allocation.facts.Institution;
 
@@ -111,6 +113,8 @@ public class Simulation extends InjectedSimulation {
 			}
 			s.addParticipant(a);
 			session.insert(a);
+			if (i == 0)
+				a.setRole(Role.head);
 		}
 	}
 

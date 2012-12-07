@@ -3,7 +3,33 @@ package allocation
 import allocation.*
 import allocation.facts.*
 import allocation.actions.*
+import allocation.agents.Agent
 import uk.ac.imperial.presage2.core.IntegerTime
 
 global org.apache.log4j.Logger logger
 
+rule "Mark VoteCalled when valid cfv"
+	when
+		$ag : Agent( role == Role.head, $pid : pool )
+		$cfv : CallForVote( player == $ag, $round : round )
+		not( exists( Processed( $cfv ;) ) )
+		$pool : CommonPool( id == $pid, round == $round )
+	then
+		modify($pool) {
+			setVoteHead( $cfv.isHead() ),
+			setVoteRaMethod( $cfv.isRaMethod() )
+		}
+		insert( new Processed( $cfv ) );
+		logger.info($cfv);
+end
+
+rule "Disable votes"
+	when 
+		$pool : CommonPool( $pid : id, $round : round, ( voteHead == true || voteRaMethod == true ) )
+		not( CallForVote( player.pool == $pid, round == $round ) )
+	then
+		modify($pool) {
+			setVoteHead( false ),
+			setVoteRaMethod( false )
+		}
+end

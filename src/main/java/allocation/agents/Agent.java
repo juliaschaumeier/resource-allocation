@@ -1,19 +1,23 @@
-package allocation;
+package allocation.agents;
 
+import uk.ac.imperial.presage2.core.Action;
 import uk.ac.imperial.presage2.core.environment.ActionHandlingException;
 import uk.ac.imperial.presage2.core.environment.UnavailableServiceException;
 import uk.ac.imperial.presage2.core.messaging.Input;
 import uk.ac.imperial.presage2.core.util.random.Random;
 import uk.ac.imperial.presage2.util.participant.AbstractParticipant;
-import allocation.actions.Appropriate;
+import allocation.PoolService;
 
 public class Agent extends AbstractParticipant {
 
-	private int pool;
-	final private double compliancyDegree;
-	final private double preferredRequest;
+	int pool;
+	final double compliancyDegree;
+	final double preferredRequest;
+	boolean active = true;
+	Role role;
+	Behaviour behav;
 
-	private PoolService poolService;
+	PoolService poolService;
 
 	public Agent(String name, double compliancyDegree, double standardRequest,
 			int pool) {
@@ -23,6 +27,7 @@ public class Agent extends AbstractParticipant {
 		this.preferredRequest = standardRequest * compliancyDegree
 				* (1 + (0.2 * Random.randomDouble() - 0.1));
 		this.pool = pool;
+		role = (this.pool >= 0 ? Role.member : Role.nonMember);
 	}
 
 	@Override
@@ -39,6 +44,14 @@ public class Agent extends AbstractParticipant {
 		return pool;
 	}
 
+	public Role getRole() {
+		return role;
+	}
+
+	public void setRole(Role role) {
+		this.role = role;
+	}
+
 	@Override
 	protected void processInput(Input in) {
 	}
@@ -46,14 +59,15 @@ public class Agent extends AbstractParticipant {
 	@Override
 	public void incrementTime() {
 		super.incrementTime();
-		if (poolService.getPoolState(pool) == Phase.Appropriate) {
-			try {
-				double appropriateAmount = preferredRequest;
-				environment.act(new Appropriate(pool, appropriateAmount),
-						getID(), authkey);
-			} catch (ActionHandlingException e) {
-				logger.warn("Couldn't appropriate", e);
-			}
+		behav = AgentBehaviour.getBehaviour(this);
+		behav.doBehaviour();
+	}
+
+	void act(Action a) {
+		try {
+			environment.act(a, getID(), authkey);
+		} catch (ActionHandlingException e) {
+			logger.warn("Couldn't act", e);
 		}
 	}
 

@@ -3,12 +3,20 @@ package allocation
 import allocation.*
 import allocation.facts.*
 import allocation.actions.*
+import allocation.agents.*
 import uk.ac.imperial.presage2.core.IntegerTime
+import java.lang.Math
 
 global org.apache.log4j.Logger logger
 
 declare Processed
 	action : TimestampedAction
+end
+
+declare Appropriated
+	agent : Agent
+	round : int
+	quantity : double
 end
 
 rule "Max level"
@@ -60,12 +68,13 @@ end
 
 rule "Take out of pool"
 	when
-		$a : Appropriate( $pid : pool, $ag : player )
+		$a : Appropriate( $pid : pool, $ag : player, $round : round )
+		not( Appropriated( agent == $ag, round == $round ) )
 		not( exists( Processed( $a ;) ) )
-		not( exists( Appropriate( player == $ag, t > $a.t ) ) )
-		$pool : CommonPool( id == $pid, state == Phase.Appropriate )
+		$pool : CommonPool( id == $pid, state == Phase.Appropriate, round == $round )
 		Agent( this == $ag, getPool() == $pid )
 	then
+		insert( new Appropriated( $ag, $round, Math.min( $a.amount, $pool.getResourceLevel() ) ) );
 		modify($pool) {
 			setResourceLevel( $pool.getResourceLevel() - $a.amount )
 		}
@@ -83,8 +92,8 @@ end
 
 rule "Prune Appropriate"
 	when
-		$t : IntegerTime()
-		$a : Appropriate( t < ($t.intValue() - 1) )
+		CommonPool( $round : round, $id : id )
+		$a : Appropriate( pool == $id, round < $round )
 	then
 		retract($a);
 		//logger.info("Prune "+ $a);

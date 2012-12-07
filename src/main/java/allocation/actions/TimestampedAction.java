@@ -4,7 +4,7 @@ import uk.ac.imperial.presage2.core.Action;
 
 public abstract class TimestampedAction implements Action {
 
-	int t;
+	int round;
 
 	TimestampedAction() {
 		super();
@@ -12,15 +12,15 @@ public abstract class TimestampedAction implements Action {
 
 	TimestampedAction(int t) {
 		super();
-		this.t = t;
+		this.round = t;
 	}
 
-	public int getT() {
-		return t;
+	public int getRound() {
+		return round;
 	}
 
-	public void setT(int t) {
-		this.t = t;
+	public void setRound(int t) {
+		this.round = t;
 	}
 
 }
