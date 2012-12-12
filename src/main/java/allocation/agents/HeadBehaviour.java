@@ -2,6 +2,10 @@ package allocation.agents;
 
 import allocation.actions.CallForVote;
 
+/**
+ * Defines the behaviour of the head agent
+ * 
+ */
 class HeadBehaviour extends MemberBehaviour {
 
 	HeadBehaviour(Agent self) {
@@ -14,13 +18,8 @@ class HeadBehaviour extends MemberBehaviour {
 		case CFV:
 			cfv();
 			break;
-		case Vote:
-			vote();
-			break;
-		case Appropriate:
-			appropriate();
-			break;
 		default:
+			super.doBehaviour();
 			break;
 		}
 	}

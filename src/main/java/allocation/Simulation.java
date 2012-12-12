@@ -94,32 +94,47 @@ public class Simulation extends InjectedSimulation {
 	protected void addToScenario(Scenario s) {
 
 		session.setGlobal("logger", logger);
+
+		// create a single common pool
 		double initialLevel = 2 * standardRequest * agents;
 		CommonPool pool0 = new CommonPool(0, initialLevel, initialLevel);
+
+		// create a single institution governing the pool.
 		Institution i0 = new Institution(0, agents, principle2, principle3,
 				principle4, principle5, principle6);
 		i0.addPool(pool0);
 		institutions.add(i0);
+
+		// insert pool and institution into drools session.
 		session.insert(pool0);
 		session.insert(i0);
 		session.insert(t);
 
+		// create agents
 		for (int i = 0; i < agents; i++) {
 			Agent a;
 			if (i < numCheat) {
+				// cheating agent
 				a = new Agent("elf " + i, 1 + greedMax * Random.randomDouble(),
 						standardRequest, 0, 0);
 			} else {
+				// good agent
 				a = new Agent("elf " + i, 1 - altrMax * Random.randomDouble(),
 						standardRequest, 0, 0);
 			}
 			s.addParticipant(a);
 			session.insert(a);
+			// set the first agent to be the head initially.
 			if (i == 0)
 				a.setRole(Role.HEAD);
 		}
 	}
 
+	/**
+	 * Update the round phase for each institution in the simulation.
+	 * 
+	 * @param e
+	 */
 	@EventListener
 	public void incrementTime(EndOfTimeCycle e) {
 		t.increment();

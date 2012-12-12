@@ -53,7 +53,6 @@ rule "Declare vote winner"
 			}
 		}
 		insert( new Declared( $iid, $b, $round, tally ) );
-		logger.info(tally);
 end
 
 rule "Echo declared"
@@ -61,4 +60,30 @@ rule "Echo declared"
 		$d : Declared()
 	then
 		logger.info( $d );
+end
+
+rule "Update Ra method"
+	when
+		$d : Declared( ballot == "raMethod", $iid : institution )
+		$i : Institution( id == $iid, round == $d.round )
+	then
+		Integer forQueue = $d.result.get(0);
+		Integer forRation = $d.result.get(1);
+		if(forQueue == null) forQueue = 0;
+		if(forRation == null) forRation = 0;
+
+		if(forQueue > forRation) {
+			$i.setAllocationMethod( RaMethod.QUEUE );
+		} else if(forRation > forQueue) {
+			$i.setAllocationMethod( RaMethod.RATION );
+		}
+		logger.info("Allocation method for institution "+ $iid +" set to "+ $i.getAllocationMethod()); 
+end
+
+rule "Reset allocations"
+	when
+		Institution( $iid : id, $round : round, state == Phase.CFV )
+		$ag : Agent( )
+	then
+		$ag.setAllocation(null);
 end

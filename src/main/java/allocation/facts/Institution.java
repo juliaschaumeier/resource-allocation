@@ -5,8 +5,6 @@ import java.util.Set;
 
 import allocation.Phase;
 
-
-
 public class Institution {
 
 	final int id;
@@ -23,6 +21,8 @@ public class Institution {
 	final int initialAgents;
 	boolean voteHead = false;
 	boolean voteRaMethod = false;
+
+	RaMethod allocationMethod = RaMethod.QUEUE;
 
 	Set<CommonPool> pools = new HashSet<CommonPool>();
 
@@ -117,6 +117,20 @@ public class Institution {
 
 	public void setVoteRaMethod(boolean voteRaMethod) {
 		this.voteRaMethod = voteRaMethod;
+	}
+
+	public RaMethod getAllocationMethod() {
+		return allocationMethod;
+	}
+
+	public void setAllocationMethod(RaMethod allocationMethod) {
+		this.allocationMethod = allocationMethod;
+	}
+
+	@Override
+	public String toString() {
+		return "Institution [id=" + id + ", state=" + state + ", round="
+				+ round + ", allocationMethod=" + allocationMethod + "]";
 	}
 
 }

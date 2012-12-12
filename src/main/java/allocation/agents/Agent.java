@@ -7,6 +7,7 @@ import uk.ac.imperial.presage2.core.messaging.Input;
 import uk.ac.imperial.presage2.core.util.random.Random;
 import uk.ac.imperial.presage2.util.participant.AbstractParticipant;
 import allocation.PoolService;
+import allocation.actions.Allocation;
 import allocation.facts.Institution;
 import allocation.facts.ResourceMonitor;
 
@@ -24,6 +25,8 @@ public class Agent extends AbstractParticipant {
 	PoolService poolService;
 	ResourceMonitor poolMonitor;
 	Institution institution;
+
+	Allocation allocation = null;
 
 	public Agent(String name, double compliancyDegree, double standardRequest,
 			int pool, int iid) {
@@ -62,6 +65,14 @@ public class Agent extends AbstractParticipant {
 
 	public void setRole(Role role) {
 		this.role = role;
+	}
+
+	public Allocation getAllocation() {
+		return allocation;
+	}
+
+	public void setAllocation(Allocation allocation) {
+		this.allocation = allocation;
 	}
 
 	@Override

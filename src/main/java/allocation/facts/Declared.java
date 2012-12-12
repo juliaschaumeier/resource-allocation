@@ -23,4 +23,20 @@ public class Declared {
 				+ ", round=" + round + ", result=" + result + "]";
 	}
 
+	public int getInstitution() {
+		return institution;
+	}
+
+	public String getBallot() {
+		return ballot;
+	}
+
+	public int getRound() {
+		return round;
+	}
+
+	public Map<Integer, Integer> getResult() {
+		return result;
+	}
+
 }

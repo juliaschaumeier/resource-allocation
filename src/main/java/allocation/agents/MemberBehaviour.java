@@ -1,6 +1,7 @@
 package allocation.agents;
 
 import allocation.actions.Appropriate;
+import allocation.actions.Demand;
 import allocation.actions.Vote;
 import allocation.facts.RaMethod;
 
@@ -18,6 +19,9 @@ class MemberBehaviour extends AgentBehaviour {
 			break;
 		case Vote:
 			vote();
+			break;
+		case Demand:
+			demand();
 			break;
 		default:
 			break;
@@ -41,7 +45,10 @@ class MemberBehaviour extends AgentBehaviour {
 		}
 	}
 
-	void request() {
+	void demand() {
+		if (self.active && self.institution.isPrinciple2()) {
+			self.act(new Demand(self.preferredRequest));
+		}
 	}
 
 	@Override

@@ -19,7 +19,14 @@ import allocation.PoolService;
 import allocation.agents.Agent;
 
 import com.google.inject.Inject;
+import com.google.inject.Singleton;
 
+/**
+ * Takes agent actions and adds relevant metadata to them before inserting into
+ * the drools session.
+ * 
+ */
+@Singleton
 public class AgentActionHandler implements ActionHandler {
 
 	final private Logger logger = Logger.getLogger(AgentActionHandler.class);
@@ -72,7 +79,7 @@ public class AgentActionHandler implements ActionHandler {
 	}
 
 	@Override
-	public Input handle(Action action, UUID actor)
+	public synchronized Input handle(Action action, UUID actor)
 			throws ActionHandlingException {
 		Agent p = getPlayer(actor);
 		if (action instanceof PlayerAction) {

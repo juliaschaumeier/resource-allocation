@@ -19,7 +19,7 @@ declare Appropriated
 	quantity : double
 end
 
-rule "Max level"
+rule "Max level" // Given an overfilled CommonPool, reset resource level to maximum
 	salience -11
 	when
 		$pool : CommonPool( resourceLevel > maxLevel, $max : maxLevel)
@@ -33,10 +33,13 @@ end
 rule "Refill pool"
 	salience -10
 	when
-		$t : IntegerTime()
+		// when a new round occurs
+		$t : IntegerTime() 
+		// and there is a pool which has not been filled in this round
 		$pool : CommonPool( $t.intValue() > getLastFilled())
+		// and the institution governing this pool is in the 'Exclude' phase
 		Institution( state == Phase.Exclude, pools contains $pool )
-	then
+	then // refill pool
 		double fillAmount = $pool.getMaxLevel() / 2;
 		int time = $t.intValue();
 		if(time < 50) {
@@ -69,17 +72,26 @@ end
 
 rule "Take out of pool"
 	when
+		// A player $ag has appropriated from pool $pid in round $round
 		$a : Appropriate( $pid : pool, $ag : player, $round : round )
+		// This player has not already arready appropriated in this round
 		not( Appropriated( agent == $ag, round == $round ) )
+		// This action has not already been processed
 		not( exists( Processed( $a ;) ) )
+		// Get pool the action occurs in
 		$pool : CommonPool( id == $pid )
+		// The institution governing the pool is in the appropriate phase
 		Institution( pools contains $pool, state == Phase.Appropriate, round == $round )
+		// Check that this agent can appropriate from this pool
 		Agent( this == $ag, getPool() == $pid )
 	then
+		// Create Appropriated fact
 		insert( new Appropriated( $ag, $round, Math.min( $a.amount, $pool.getResourceLevel() ) ) );
+		// modify the resource level in the pool
 		modify($pool) {
 			setResourceLevel( $pool.getResourceLevel() - $a.amount )
 		}
+		// mark action as processed
 		insert( new Processed( $a ) );
 		logger.info($a);
 end

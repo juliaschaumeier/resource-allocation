@@ -15,6 +15,10 @@ import allocation.facts.ResourceMonitor;
 
 import com.google.inject.Inject;
 
+/**
+ * Access to relevant state for agents.
+ * 
+ */
 public class PoolService extends EnvironmentService {
 
 	final StatefulKnowledgeSession session;
@@ -28,6 +32,9 @@ public class PoolService extends EnvironmentService {
 		this.session = session;
 	}
 
+	/**
+	 * Loads the set of {@link CommonPool}s from the session into a Map.
+	 */
 	private void loadPools() {
 		if (pools.isEmpty()) {
 			Collection<Object> ps = session.getObjects(new ObjectFilter() {
@@ -46,6 +53,9 @@ public class PoolService extends EnvironmentService {
 		}
 	}
 
+	/**
+	 * Loads the set of {@link Institution}s from the session into a Map.
+	 */
 	private void loadInstitutions() {
 		if (institutions.isEmpty()) {
 			Collection<Object> is = session.getObjects(new ObjectFilter() {
@@ -64,6 +74,12 @@ public class PoolService extends EnvironmentService {
 		}
 	}
 
+	/**
+	 * Get a monitor for the specified pool.
+	 * 
+	 * @param poolId
+	 * @return
+	 */
 	public ResourceMonitor getPool(int poolId) {
 		loadPools();
 		if (pools.containsKey(poolId))
@@ -72,6 +88,12 @@ public class PoolService extends EnvironmentService {
 			return null;
 	}
 
+	/**
+	 * Get the specified institution.
+	 * 
+	 * @param id
+	 * @return
+	 */
 	public Institution getInstitution(int id) {
 		loadInstitutions();
 		if (institutions.containsKey(id))
