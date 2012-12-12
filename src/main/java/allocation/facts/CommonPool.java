@@ -2,7 +2,7 @@ package allocation.facts;
 
 
 
-public class CommonPool implements ResourceMonitor {
+public class CommonPool implements VisibilityResource {
 
 	public enum RefillRate {
 		LOW, MEDIUM, HIGH

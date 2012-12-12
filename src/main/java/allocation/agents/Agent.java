@@ -1,5 +1,9 @@
 package allocation.agents;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
+
 import uk.ac.imperial.presage2.core.Action;
 import uk.ac.imperial.presage2.core.environment.ActionHandlingException;
 import uk.ac.imperial.presage2.core.environment.UnavailableServiceException;
@@ -8,8 +12,10 @@ import uk.ac.imperial.presage2.core.util.random.Random;
 import uk.ac.imperial.presage2.util.participant.AbstractParticipant;
 import allocation.PoolService;
 import allocation.actions.Allocation;
+import allocation.actions.Demand;
+import allocation.facts.CommonPool;
 import allocation.facts.Institution;
-import allocation.facts.ResourceMonitor;
+import allocation.facts.VisibilityResource;
 
 public class Agent extends AbstractParticipant {
 
@@ -23,13 +29,13 @@ public class Agent extends AbstractParticipant {
 	Behaviour behav;
 
 	PoolService poolService;
-	ResourceMonitor poolMonitor;
+	VisibilityResource poolMonitor;
 	Institution institution;
 
 	Allocation allocation = null;
 
 	public Agent(String name, double compliancyDegree, double standardRequest,
-			int pool, int iid) {
+			int pool, int iid, Role initialRole) {
 		super(Random.randomUUID(), name);
 		this.compliancyDegree = compliancyDegree;
 		// oscillate with an amplitude of 0.1
@@ -38,7 +44,8 @@ public class Agent extends AbstractParticipant {
 				* (1 + (0.2 * Random.randomDouble() - 0.1));
 		this.pool = pool;
 		this.institutionId = iid;
-		role = (this.institutionId >= 0 ? Role.MEMBER : Role.NONMEMBER);
+		this.role = initialRole;
+		// role = (this.institutionId >= 0 ? Role.MEMBER : Role.NONMEMBER);
 	}
 
 	@Override
@@ -86,6 +93,14 @@ public class Agent extends AbstractParticipant {
 		institution = poolService.getInstitution(institutionId);
 		behav = AgentBehaviour.getBehaviour(this);
 		behav.doBehaviour();
+	}
+
+	public Set<Allocation> doAllocation(CommonPool pool, List<Demand> demands) {
+		if (behav instanceof HeadBehaviour) {
+			return ((HeadBehaviour) behav).allocate(pool, demands);
+		}
+		logger.warn("Got told to allocate but I don't have a HeadBehaviour!");
+		return Collections.emptySet();
 	}
 
 	void act(Action a) {

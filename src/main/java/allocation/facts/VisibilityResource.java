@@ -1,6 +1,6 @@
 package allocation.facts;
 
-public interface ResourceMonitor {
+public interface VisibilityResource {
 
 	public double getResourceLevel();
 

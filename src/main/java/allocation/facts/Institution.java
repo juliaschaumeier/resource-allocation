@@ -1,11 +1,14 @@
 package allocation.facts;
 
 import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.Queue;
 import java.util.Set;
 
 import allocation.Phase;
+import allocation.actions.Demand;
 
-public class Institution {
+public class Institution implements VisibilityHeadInstitution {
 
 	final int id;
 	Phase state = Phase.CFV;
@@ -25,6 +28,8 @@ public class Institution {
 	RaMethod allocationMethod = RaMethod.QUEUE;
 
 	Set<CommonPool> pools = new HashSet<CommonPool>();
+
+	Queue<Demand> demandQueue = new LinkedList<Demand>();
 
 	public Institution(int id, int initialAgents, boolean principle2,
 			boolean principle3, boolean principle4, boolean principle5,
@@ -131,6 +136,11 @@ public class Institution {
 	public String toString() {
 		return "Institution [id=" + id + ", state=" + state + ", round="
 				+ round + ", allocationMethod=" + allocationMethod + "]";
+	}
+
+	@Override
+	public Queue<Demand> getDemandQueue() {
+		return demandQueue;
 	}
 
 }

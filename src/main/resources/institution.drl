@@ -7,6 +7,7 @@ import allocation.agents.*
 import uk.ac.imperial.presage2.core.IntegerTime
 import java.util.HashMap
 import java.util.List
+import java.util.Set
 
 global org.apache.log4j.Logger logger
 
@@ -67,8 +68,8 @@ rule "Update Ra method"
 		$d : Declared( ballot == "raMethod", $iid : institution )
 		$i : Institution( id == $iid, round == $d.round )
 	then
-		Integer forQueue = $d.result.get(0);
-		Integer forRation = $d.result.get(1);
+		Integer forQueue = $d.result.get(RaMethod.QUEUE.ordinal());
+		Integer forRation = $d.result.get(RaMethod.RATION.ordinal());
 		if(forQueue == null) forQueue = 0;
 		if(forRation == null) forRation = 0;
 
@@ -78,6 +79,37 @@ rule "Update Ra method"
 			$i.setAllocationMethod( RaMethod.RATION );
 		}
 		logger.info("Allocation method for institution "+ $iid +" set to "+ $i.getAllocationMethod()); 
+end
+
+rule "Do allocation"
+	when
+		// get an institution in allocate phase
+		$inst : Institution( $iid : id, $round : round, $pools : pools, state == Phase.Allocate )
+		// get a pool from this institution
+		$pool : CommonPool( this memberOf $pools )
+		// get the head
+		$ag : Agent( role == Role.HEAD, institutionId == $iid )
+		// get demands for this pool
+		$demands : List( size > 0 ) from collect( Demand( pool == $pool.id ) )
+	then
+		logger.info( $ag );
+		logger.info( $demands );
+		Set<Allocation> allocations = $ag.doAllocation($pool, $demands);
+		logger.info(allocations);
+		for(Allocation a : allocations) {
+			insert(a);
+		}
+end
+
+rule "Notify agents of allocations"
+	when
+		Institution( $iid : id, $round : round )
+		$all : Allocation( $ag : player, round == $round )
+		not Processed( $all ;)
+		Agent( this == $ag, institutionId == $iid )
+	then
+		$ag.setAllocation($all);
+		insert( new Processed($all) );
 end
 
 rule "Reset allocations"

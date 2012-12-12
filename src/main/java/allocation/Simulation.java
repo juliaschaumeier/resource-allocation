@@ -113,20 +113,23 @@ public class Simulation extends InjectedSimulation {
 		// create agents
 		for (int i = 0; i < agents; i++) {
 			Agent a;
+			Role role = Role.MEMBER;
+			// set the first agent to be the head initially.
+			if (i == 0)
+				role = Role.HEAD;
+
 			if (i < numCheat) {
 				// cheating agent
 				a = new Agent("elf " + i, 1 + greedMax * Random.randomDouble(),
-						standardRequest, 0, 0);
+						standardRequest, 0, 0, role);
 			} else {
 				// good agent
 				a = new Agent("elf " + i, 1 - altrMax * Random.randomDouble(),
-						standardRequest, 0, 0);
+						standardRequest, 0, 0, role);
 			}
 			s.addParticipant(a);
 			session.insert(a);
-			// set the first agent to be the head initially.
-			if (i == 0)
-				a.setRole(Role.HEAD);
+
 		}
 	}
 

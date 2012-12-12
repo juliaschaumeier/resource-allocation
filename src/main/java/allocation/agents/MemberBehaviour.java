@@ -47,7 +47,7 @@ class MemberBehaviour extends AgentBehaviour {
 
 	void demand() {
 		if (self.active && self.institution.isPrinciple2()) {
-			self.act(new Demand(self.preferredRequest));
+			self.act(new Demand(self.pool, self.preferredRequest));
 		}
 	}
 
@@ -57,7 +57,7 @@ class MemberBehaviour extends AgentBehaviour {
 			double appropriateAmount = 0;
 			if (self.institution.isPrinciple2()) {
 				if (self.compliancyDegree > 1) {
-
+					
 				}
 			} else {
 				// principle 2 disabled: use preferredRequest

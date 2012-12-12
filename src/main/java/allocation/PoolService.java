@@ -11,7 +11,7 @@ import uk.ac.imperial.presage2.core.environment.EnvironmentService;
 import uk.ac.imperial.presage2.core.environment.EnvironmentSharedStateAccess;
 import allocation.facts.CommonPool;
 import allocation.facts.Institution;
-import allocation.facts.ResourceMonitor;
+import allocation.facts.VisibilityResource;
 
 import com.google.inject.Inject;
 
@@ -80,7 +80,7 @@ public class PoolService extends EnvironmentService {
 	 * @param poolId
 	 * @return
 	 */
-	public ResourceMonitor getPool(int poolId) {
+	public VisibilityResource getPool(int poolId) {
 		loadPools();
 		if (pools.containsKey(poolId))
 			return pools.get(poolId);
