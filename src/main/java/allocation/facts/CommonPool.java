@@ -1,8 +1,8 @@
 package allocation.facts;
 
-import allocation.Phase;
 
-public class CommonPool {
+
+public class CommonPool implements ResourceMonitor {
 
 	public enum RefillRate {
 		LOW, MEDIUM, HIGH
@@ -12,21 +12,13 @@ public class CommonPool {
 	double resourceLevel;
 	final double maxLevel;
 	int lastFilled = 0;
-	final Institution institution;
-	Phase state = Phase.CFV;
-	int round = 0;
 	boolean depleated = false;
 
-	boolean voteHead = false;
-	boolean voteRaMethod = false;
-
-	public CommonPool(int id, double initialLevel, double maxLavel,
-			Institution i) {
+	public CommonPool(int id, double initialLevel, double maxLavel) {
 		super();
 		this.id = id;
 		this.resourceLevel = initialLevel;
 		this.maxLevel = maxLavel;
-		this.institution = i;
 	}
 
 	public int getId() {
@@ -56,51 +48,14 @@ public class CommonPool {
 		this.lastFilled = lastFilled;
 	}
 
-	public Institution getInstitution() {
-		return institution;
-	}
-
-	public Phase getState() {
-		return state;
-	}
-
-	public void setState(Phase state) {
-		this.state = state;
-	}
-
-	public int getRound() {
-		return round;
-	}
-
-	public void incrementRound() {
-		++round;
-	}
-
 	public boolean isDepleated() {
 		return depleated;
-	}
-
-	public boolean isVoteHead() {
-		return voteHead;
-	}
-
-	public void setVoteHead(boolean voteHead) {
-		this.voteHead = voteHead;
-	}
-
-	public boolean isVoteRaMethod() {
-		return voteRaMethod;
-	}
-
-	public void setVoteRaMethod(boolean voteRaMethod) {
-		this.voteRaMethod = voteRaMethod;
 	}
 
 	@Override
 	public String toString() {
 		return "CommonPool " + id + " [resourceLevel=" + resourceLevel
-				+ ", maxLevel=" + maxLevel + ", state=" + state + " , round="
-				+ round + "]";
+				+ ", maxLevel=" + maxLevel + "]";
 	}
 
 }

@@ -1,6 +1,17 @@
 package allocation.facts;
 
+import java.util.HashSet;
+import java.util.Set;
+
+import allocation.Phase;
+
+
+
 public class Institution {
+
+	final int id;
+	Phase state = Phase.CFV;
+	int round = 0;
 
 	final boolean principle1 = true;
 	boolean principle2 = false;
@@ -9,14 +20,43 @@ public class Institution {
 	boolean principle5 = false;
 	boolean principle6 = false;
 
-	public Institution(boolean principle2, boolean principle3,
-			boolean principle4, boolean principle5, boolean principle6) {
+	final int initialAgents;
+	boolean voteHead = false;
+	boolean voteRaMethod = false;
+
+	Set<CommonPool> pools = new HashSet<CommonPool>();
+
+	public Institution(int id, int initialAgents, boolean principle2,
+			boolean principle3, boolean principle4, boolean principle5,
+			boolean principle6) {
 		super();
+		this.id = id;
 		this.principle2 = principle2;
 		this.principle3 = principle3;
 		this.principle4 = principle4;
 		this.principle5 = principle5;
 		this.principle6 = principle6;
+		this.initialAgents = initialAgents;
+	}
+
+	public void addPool(CommonPool p) {
+		pools.add(p);
+	}
+
+	public int getId() {
+		return id;
+	}
+
+	public CommonPool getPool(int id) {
+		for (CommonPool p : pools) {
+			if (p.getId() == id)
+				return p;
+		}
+		return null;
+	}
+
+	public Set<CommonPool> getPools() {
+		return pools;
 	}
 
 	public boolean isPrinciple1() {
@@ -41,6 +81,42 @@ public class Institution {
 
 	public boolean isPrinciple6() {
 		return principle6;
+	}
+
+	public Phase getState() {
+		return state;
+	}
+
+	public void setState(Phase state) {
+		this.state = state;
+	}
+
+	public int getRound() {
+		return round;
+	}
+
+	public void incrementRound() {
+		++round;
+	}
+
+	public int getInitialAgents() {
+		return initialAgents;
+	}
+
+	public boolean isVoteHead() {
+		return voteHead;
+	}
+
+	public boolean isVoteRaMethod() {
+		return voteRaMethod;
+	}
+
+	public void setVoteHead(boolean voteHead) {
+		this.voteHead = voteHead;
+	}
+
+	public void setVoteRaMethod(boolean voteRaMethod) {
+		this.voteRaMethod = voteRaMethod;
 	}
 
 }

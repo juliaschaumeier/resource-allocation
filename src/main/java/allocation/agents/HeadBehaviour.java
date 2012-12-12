@@ -10,9 +10,12 @@ class HeadBehaviour extends MemberBehaviour {
 
 	@Override
 	public void doBehaviour() {
-		switch (self.poolService.getPoolState(self.pool)) {
+		switch (self.institution.getState()) {
 		case CFV:
 			cfv();
+			break;
+		case Vote:
+			vote();
 			break;
 		case Appropriate:
 			appropriate();
@@ -38,7 +41,7 @@ class HeadBehaviour extends MemberBehaviour {
 	}
 
 	void cfv() {
-		if(self.poolService.getIntitution(self.pool).isPrinciple3()) {
+		if (self.institution.isPrinciple3()) {
 			// call for vote on ra method
 			self.act(new CallForVote(false, true));
 		}

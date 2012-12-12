@@ -7,27 +7,35 @@ import uk.ac.imperial.presage2.core.messaging.Input;
 import uk.ac.imperial.presage2.core.util.random.Random;
 import uk.ac.imperial.presage2.util.participant.AbstractParticipant;
 import allocation.PoolService;
+import allocation.facts.Institution;
+import allocation.facts.ResourceMonitor;
 
 public class Agent extends AbstractParticipant {
 
 	int pool;
+	int institutionId;
 	final double compliancyDegree;
+	final double standardRequest;
 	final double preferredRequest;
 	boolean active = true;
 	Role role;
 	Behaviour behav;
 
 	PoolService poolService;
+	ResourceMonitor poolMonitor;
+	Institution institution;
 
 	public Agent(String name, double compliancyDegree, double standardRequest,
-			int pool) {
+			int pool, int iid) {
 		super(Random.randomUUID(), name);
 		this.compliancyDegree = compliancyDegree;
 		// oscillate with an amplitude of 0.1
+		this.standardRequest = standardRequest;
 		this.preferredRequest = standardRequest * compliancyDegree
 				* (1 + (0.2 * Random.randomDouble() - 0.1));
 		this.pool = pool;
-		role = (this.pool >= 0 ? Role.member : Role.nonMember);
+		this.institutionId = iid;
+		role = (this.institutionId >= 0 ? Role.MEMBER : Role.NONMEMBER);
 	}
 
 	@Override
@@ -42,6 +50,10 @@ public class Agent extends AbstractParticipant {
 
 	public int getPool() {
 		return pool;
+	}
+
+	public int getInstitutionId() {
+		return institutionId;
 	}
 
 	public Role getRole() {
@@ -59,6 +71,8 @@ public class Agent extends AbstractParticipant {
 	@Override
 	public void incrementTime() {
 		super.incrementTime();
+		poolMonitor = poolService.getPool(pool);
+		institution = poolService.getInstitution(institutionId);
 		behav = AgentBehaviour.getBehaviour(this);
 		behav.doBehaviour();
 	}

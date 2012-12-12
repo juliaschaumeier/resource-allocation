@@ -34,7 +34,8 @@ rule "Refill pool"
 	salience -10
 	when
 		$t : IntegerTime()
-		$pool : CommonPool( $t.intValue() > getLastFilled(), state == Phase.Exclude )
+		$pool : CommonPool( $t.intValue() > getLastFilled())
+		Institution( state == Phase.Exclude, pools contains $pool )
 	then
 		double fillAmount = $pool.getMaxLevel() / 2;
 		int time = $t.intValue();
@@ -71,7 +72,8 @@ rule "Take out of pool"
 		$a : Appropriate( $pid : pool, $ag : player, $round : round )
 		not( Appropriated( agent == $ag, round == $round ) )
 		not( exists( Processed( $a ;) ) )
-		$pool : CommonPool( id == $pid, state == Phase.Appropriate, round == $round )
+		$pool : CommonPool( id == $pid )
+		Institution( pools contains $pool, state == Phase.Appropriate, round == $round )
 		Agent( this == $ag, getPool() == $pid )
 	then
 		insert( new Appropriated( $ag, $round, Math.min( $a.amount, $pool.getResourceLevel() ) ) );
@@ -92,7 +94,8 @@ end
 
 rule "Prune Appropriate"
 	when
-		CommonPool( $round : round, $id : id )
+		$pool : CommonPool( $id : id )
+		Institution( pools contains $pool, $round : round )
 		$a : Appropriate( pool == $id, round < $round )
 	then
 		retract($a);

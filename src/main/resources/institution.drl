@@ -3,19 +3,21 @@ package allocation
 import allocation.*
 import allocation.facts.*
 import allocation.actions.*
-import allocation.agents.Agent
+import allocation.agents.*
 import uk.ac.imperial.presage2.core.IntegerTime
+import java.util.HashMap
+import java.util.List
 
 global org.apache.log4j.Logger logger
 
 rule "Mark VoteCalled when valid cfv"
 	when
-		$ag : Agent( role == Role.head, $pid : pool )
-		$cfv : CallForVote( player == $ag, $round : round )
+		$cfv : CallForVote( $ag : player, player.role == Role.HEAD, $round : round )
+		Agent( this == $ag, $iid : institutionId )
 		not( exists( Processed( $cfv ;) ) )
-		$pool : CommonPool( id == $pid, round == $round )
+		$inst : Institution( id == $iid, round == $round )
 	then
-		modify($pool) {
+		modify($inst) {
 			setVoteHead( $cfv.isHead() ),
 			setVoteRaMethod( $cfv.isRaMethod() )
 		}
@@ -25,11 +27,38 @@ end
 
 rule "Disable votes"
 	when 
-		$pool : CommonPool( $pid : id, $round : round, ( voteHead == true || voteRaMethod == true ) )
-		not( CallForVote( player.pool == $pid, round == $round ) )
+		$inst : Institution( $iid : id, $round : round, ( voteHead == true || voteRaMethod == true ) )
+		not( CallForVote( player.institutionId == $iid, round == $round ) )
 	then
-		modify($pool) {
+		modify($inst) {
 			setVoteHead( false ),
 			setVoteRaMethod( false )
 		}
+end
+
+rule "Declare vote winner"
+	when
+		Institution( $iid : id, $round : round )
+		Vote( player.institutionId == $iid, round == $round, $b : ballot )
+		not Declared( institution == $iid, ballot == $b, round == $round )
+		$votes : List( size > 0 ) from collect( Vote( player.institutionId == $iid, round == $round, ballot == $b ) )
+	then
+		HashMap<Integer, Integer> tally = new HashMap<Integer, Integer>();
+		for( Object o : $votes ) {
+			Vote v = (Vote) o;
+			if(tally.containsKey(v.getValue())) {
+				tally.put(v.getValue(), tally.get(v.getValue()) + 1);
+			} else {
+				tally.put(v.getValue(), 1);
+			}
+		}
+		insert( new Declared( $iid, $b, $round, tally ) );
+		logger.info(tally);
+end
+
+rule "Echo declared"
+	when
+		$d : Declared()
+	then
+		logger.info( $d );
 end

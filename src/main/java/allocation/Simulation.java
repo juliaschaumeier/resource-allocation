@@ -59,7 +59,7 @@ public class Simulation extends InjectedSimulation {
 	@Parameter(name = "principle6", optional = true)
 	public boolean principle6 = true;
 
-	Set<CommonPool> pools = new HashSet<CommonPool>();
+	Set<Institution> institutions = new HashSet<Institution>();
 
 	public Simulation(Set<AbstractModule> modules) {
 		super(modules);
@@ -95,26 +95,28 @@ public class Simulation extends InjectedSimulation {
 
 		session.setGlobal("logger", logger);
 		double initialLevel = 2 * standardRequest * agents;
-		CommonPool pool0 = new CommonPool(0, initialLevel, initialLevel,
-				new Institution(principle2, principle3, principle4, principle5,
-						principle6));
-		pools.add(pool0);
+		CommonPool pool0 = new CommonPool(0, initialLevel, initialLevel);
+		Institution i0 = new Institution(0, agents, principle2, principle3,
+				principle4, principle5, principle6);
+		i0.addPool(pool0);
+		institutions.add(i0);
 		session.insert(pool0);
+		session.insert(i0);
 		session.insert(t);
 
 		for (int i = 0; i < agents; i++) {
 			Agent a;
 			if (i < numCheat) {
 				a = new Agent("elf " + i, 1 + greedMax * Random.randomDouble(),
-						standardRequest, 0);
+						standardRequest, 0, 0);
 			} else {
 				a = new Agent("elf " + i, 1 - altrMax * Random.randomDouble(),
-						standardRequest, 0);
+						standardRequest, 0, 0);
 			}
 			s.addParticipant(a);
 			session.insert(a);
 			if (i == 0)
-				a.setRole(Role.head);
+				a.setRole(Role.HEAD);
 		}
 	}
 
@@ -122,14 +124,14 @@ public class Simulation extends InjectedSimulation {
 	public void incrementTime(EndOfTimeCycle e) {
 		t.increment();
 		session.update(session.getFactHandle(t), t);
-		for (CommonPool p : pools) {
-			Phase next = Phase.values()[(p.getState().ordinal() + 1)
+		for (Institution i : institutions) {
+			Phase next = Phase.values()[(i.getState().ordinal() + 1)
 					% Phase.values().length];
-			p.setState(next);
+			i.setState(next);
 			if (next == Phase.CFV)
-				p.incrementRound();
-			session.update(session.getFactHandle(p), p);
-			logger.info(p);
+				i.incrementRound();
+			session.update(session.getFactHandle(i), i);
+			logger.info(i);
 		}
 	}
 

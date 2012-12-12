@@ -7,18 +7,19 @@ import java.util.Map;
 import org.drools.runtime.ObjectFilter;
 import org.drools.runtime.StatefulKnowledgeSession;
 
-import allocation.facts.CommonPool;
-import allocation.facts.Institution;
-
-import com.google.inject.Inject;
-
 import uk.ac.imperial.presage2.core.environment.EnvironmentService;
 import uk.ac.imperial.presage2.core.environment.EnvironmentSharedStateAccess;
+import allocation.facts.CommonPool;
+import allocation.facts.Institution;
+import allocation.facts.ResourceMonitor;
+
+import com.google.inject.Inject;
 
 public class PoolService extends EnvironmentService {
 
 	final StatefulKnowledgeSession session;
 	Map<Integer, CommonPool> pools = new HashMap<Integer, CommonPool>();
+	Map<Integer, Institution> institutions = new HashMap<Integer, Institution>();
 
 	@Inject
 	public PoolService(EnvironmentSharedStateAccess sharedState,
@@ -45,50 +46,38 @@ public class PoolService extends EnvironmentService {
 		}
 	}
 
-	public Phase getPoolState(int poolId) {
+	private void loadInstitutions() {
+		if (institutions.isEmpty()) {
+			Collection<Object> is = session.getObjects(new ObjectFilter() {
+
+				@Override
+				public boolean accept(Object object) {
+					return object instanceof Institution;
+				}
+			});
+			for (Object o : is) {
+				if (o instanceof Institution) {
+					Institution p = (Institution) o;
+					institutions.put(p.getId(), p);
+				}
+			}
+		}
+	}
+
+	public ResourceMonitor getPool(int poolId) {
 		loadPools();
-		try {
-			return pools.get(poolId).getState();
-		} catch (NullPointerException e) {
+		if (pools.containsKey(poolId))
+			return pools.get(poolId);
+		else
 			return null;
-		}
 	}
 
-	public int getRoundNumber(int poolId) {
-		loadPools();
-		try {
-			return pools.get(poolId).getRound();
-		} catch (NullPointerException e) {
-			return 0;
-		}
-	}
-
-	public boolean getIsPoolDepleated(int poolId) {
-		loadPools();
-		try {
-			return pools.get(poolId).isDepleated();
-		} catch (NullPointerException e) {
-			return true;
-		}
-	}
-
-	public Institution getIntitution(int poolId) {
-		loadPools();
-		try {
-			return pools.get(poolId).getInstitution();
-		} catch (NullPointerException e) {
+	public Institution getInstitution(int id) {
+		loadInstitutions();
+		if (institutions.containsKey(id))
+			return institutions.get(id);
+		else
 			return null;
-		}
-	}
-
-	public boolean isVoteOnHead(int poolId) {
-		loadPools();
-		return pools.get(poolId).isVoteHead();
-	}
-
-	public boolean isVoteOnRaMethod(int poolId) {
-		loadPools();
-		return pools.get(poolId).isVoteRaMethod();
 	}
 
 }

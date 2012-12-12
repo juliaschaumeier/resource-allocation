@@ -79,7 +79,8 @@ public class AgentActionHandler implements ActionHandler {
 			((PlayerAction) action).setPlayer(p);
 		}
 		if (action instanceof TimestampedAction) {
-			((TimestampedAction) action).setRound(getPoolService().getRoundNumber(0));
+			((TimestampedAction) action).setRound(getPoolService()
+					.getInstitution(0).getRound());
 		}
 		session.insert(action);
 		logger.debug("Handling: " + action);

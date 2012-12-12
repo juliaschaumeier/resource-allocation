@@ -15,11 +15,11 @@ abstract class AgentBehaviour implements Behaviour {
 
 	static Behaviour getBehaviour(Agent a) {
 		switch (a.role) {
-		case member:
+		case MEMBER:
 			return new MemberBehaviour(a);
-		case nonMember:
+		case NONMEMBER:
 			return new NonMemberBehaviour(a);
-		case head:
+		case HEAD:
 			return new HeadBehaviour(a);
 		default:
 			return null;
