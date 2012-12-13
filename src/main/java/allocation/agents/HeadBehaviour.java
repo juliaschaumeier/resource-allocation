@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.Queue;
 import java.util.Set;
 
+import uk.ac.imperial.presage2.core.util.random.Random;
+
 import allocation.actions.Allocation;
 import allocation.actions.CallForVote;
 import allocation.actions.Demand;
@@ -58,6 +60,22 @@ class HeadBehaviour extends MemberBehaviour {
 	void declare() {
 	}
 
+	Set<Agent> monitor(Set<Agent> agents) {// julia: subtract monitoringcost in allocate!
+		Set<Agent> monitorlist = new HashSet<Agent>();
+		if (self.institution.isPrinciple4()) {
+
+			for (Agent ag : agents) {
+				if (ag.active
+						&& Random.randomDouble() < self.institution
+								.getMonitoringLevel()) {
+					monitorlist.add(ag);
+				}
+			}
+		}
+		return monitorlist;
+	}
+
+	// don't forget compulsory outmonitoring from Principle 1!!
 	Set<Allocation> allocate(CommonPool pool, List<Demand> demands) {
 		Set<Allocation> allocations = new HashSet<Allocation>();
 		switch (self.institution.getAllocationMethod()) {

@@ -119,3 +119,20 @@ rule "Reset allocations"
 	then
 		$ag.setAllocation(null);
 end
+
+rule "Monitor agents" //julia
+	when
+		Institution( $iid : id, $round : round )
+		Agent( this == $ag, institutionId == $iid )
+		$ag : Monitoring($ag: player, round == $round)
+		$pool : Pool($iid == id)
+	then
+		if (ag.getAppropriation > ag.getAllocation){
+			//punish agent
+			$pool.setResourcelevel -= $iid.monitoringcost;//take monitoringcost out of pool
+		}
+		else
+			//take monitoringcost out of pool
+end
+
+

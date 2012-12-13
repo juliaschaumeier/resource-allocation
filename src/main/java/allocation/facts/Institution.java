@@ -26,6 +26,8 @@ public class Institution implements VisibilityHeadInstitution {
 	boolean voteRaMethod = false;
 
 	RaMethod allocationMethod = RaMethod.QUEUE;
+	double monitoringLevel;//julia: who sees it?? Head only?
+	double monitoringCost;//julia
 
 	Set<CommonPool> pools = new HashSet<CommonPool>();
 
@@ -131,6 +133,15 @@ public class Institution implements VisibilityHeadInstitution {
 	public void setAllocationMethod(RaMethod allocationMethod) {
 		this.allocationMethod = allocationMethod;
 	}
+	
+	public double getMonitoringLevel(){//julia
+		return monitoringLevel;
+	}
+	
+	public double getMonitoringCost(){//julia
+		return monitoringCost;
+	}
+	
 
 	@Override
 	public String toString() {
@@ -142,5 +153,6 @@ public class Institution implements VisibilityHeadInstitution {
 	public Queue<Demand> getDemandQueue() {
 		return demandQueue;
 	}
+	
 
 }

@@ -47,6 +47,11 @@ public class Simulation extends InjectedSimulation {
 	public double greedMax = 0.2;
 	@Parameter(name = "altrMax", optional = true)
 	public double altrMax = 0.0;
+	
+	@Parameter(name = "monitoringLevel", optional = true)//julia
+	public double monitoringLevel = 0.1;
+	@Parameter(name = "monitoringCost", optional = true)//julia
+	public double monitoringCost = 0.1*standardRequest;
 
 	@Parameter(name = "principle2", optional = true)
 	public boolean principle2 = true;
