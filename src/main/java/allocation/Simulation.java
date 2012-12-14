@@ -40,6 +40,12 @@ public class Simulation extends InjectedSimulation {
 	@Parameter(name = "numCheat", optional = true)
 	public int numCheat = 50;
 
+	// julia
+	@Parameter(name = "outAgents", optional = true)
+	public int outAgents = 20;
+	@Parameter(name = "outNumCheat", optional = true)
+	public int outNumCheat = 10;
+
 	@Parameter(name = "standardRequest", optional = true)
 	public double standardRequest = 50;
 
@@ -47,11 +53,16 @@ public class Simulation extends InjectedSimulation {
 	public double greedMax = 0.2;
 	@Parameter(name = "altrMax", optional = true)
 	public double altrMax = 0.0;
-	
-	@Parameter(name = "monitoringLevel", optional = true)//julia
+
+	// julia
+	@Parameter(name = "monitoringLevel", optional = true)
 	public double monitoringLevel = 0.1;
-	@Parameter(name = "monitoringCost", optional = true)//julia
-	public double monitoringCost = 0.1*standardRequest;
+	@Parameter(name = "monitoringCost", optional = true)
+	public double monitoringCost = 0.1 * standardRequest;
+	@Parameter(name = "outMonitoringLevel", optional = true)
+	public double outMonitoringLevel = 0.1;
+	@Parameter(name = "outMonitoringCost", optional = true)
+	public double outMonitoringCost = 0.1 * standardRequest;
 
 	@Parameter(name = "principle2", optional = true)
 	public boolean principle2 = true;
@@ -115,7 +126,7 @@ public class Simulation extends InjectedSimulation {
 		session.insert(i0);
 		session.insert(t);
 
-		// create agents
+		// create member agents
 		for (int i = 0; i < agents; i++) {
 			Agent a;
 			Role role = Role.MEMBER;
@@ -124,11 +135,11 @@ public class Simulation extends InjectedSimulation {
 				role = Role.HEAD;
 
 			if (i < numCheat) {
-				// cheating agent
+				// cheating member
 				a = new Agent("elf " + i, 1 + greedMax * Random.randomDouble(),
 						standardRequest, 0, 0, role);
 			} else {
-				// good agent
+				// good member
 				a = new Agent("elf " + i, 1 - altrMax * Random.randomDouble(),
 						standardRequest, 0, 0, role);
 			}
@@ -136,6 +147,25 @@ public class Simulation extends InjectedSimulation {
 			session.insert(a);
 
 		}
+
+		// create agents outside the institution
+		for (int i = 0; i < outAgents; i++) {//julia
+			Agent a;
+			Role role = Role.NONMEMBER;
+			if (i < outNumCheat) {
+				// cheating agent
+				a = new Agent("outelf " + i, 1 + greedMax
+						* Random.randomDouble(), standardRequest, 0, 0, role);
+			} else {
+				// good agent
+				a = new Agent("outelf " + i, 1 - altrMax
+						* Random.randomDouble(), standardRequest, 0, 0, role);
+			}
+			s.addParticipant(a);
+			session.insert(a);
+
+		}
+
 	}
 
 	/**

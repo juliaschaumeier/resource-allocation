@@ -1,5 +1,8 @@
 package allocation.agents;
 
+import uk.ac.imperial.presage2.core.util.random.Random;
+import allocation.actions.Appropriate;
+
 abstract class AgentBehaviour implements Behaviour {
 
 	final Agent self;
@@ -23,6 +26,18 @@ abstract class AgentBehaviour implements Behaviour {
 			return new HeadBehaviour(a);
 		default:
 			return null;
+		}
+	}
+	
+	void appropriate() {//julia: replace with abstract void? will it be overwritten by the agent's appropriate function?
+		if (self.active) {
+			double appropriateAmount = 0;
+				if (self.compliancyDegree > 1 && Random.randomDouble() < outapprperc) {
+					//agent doesn't place request; for outmonitor: outapprperc -= outapprperc*scarefactor; 0.1*0.1 typically.
+					appropriate = standardreq*originalgreedity;// do something...
+				}
+			// do appropriation action
+			self.act(new Appropriate(self.pool, appropriateAmount));
 		}
 	}
 

@@ -123,12 +123,12 @@ end
 rule "Monitor agents" //julia
 	when
 		Institution( $iid : id, $round : round )
-		Agent( this == $ag, institutionId == $iid )
+		Member( this == $ag, institutionId == $iid )//or just agent and if he doesn't have an institution he's not a member??
 		$ag : Monitoring($ag: player, round == $round)
 		$pool : Pool($iid == id)
 	then
 		if (ag.getAppropriation > ag.getAllocation){
-			//punish agent
+			ag.setRole(NONMEMBER);//permission set?
 			$pool.setResourcelevel -= $iid.monitoringcost;//take monitoringcost out of pool
 		}
 		else
