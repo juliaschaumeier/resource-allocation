@@ -120,19 +120,59 @@ rule "Reset allocations"
 		$ag.setAllocation(null);
 end
 
-rule "Monitor agents" //julia
+rule "Deduct member monitoring cost" //julia: happens after appropriation!! 
 	when
-		Institution( $iid : id, $round : round )
-		Member( this == $ag, institutionId == $iid )//or just agent and if he doesn't have an institution he's not a member??
-		$ag : Monitoring($ag: player, round == $round)
-		$pool : Pool($iid == id)
+		$i : Institution( $iid : id, $round : round, state == Phase.Appropriate )
+		Monitor( $ag : monitored, round == $round )
+		Agent( this == $ag, institutionId == $iid )
+		$pool : CommonPool( id == $ag.getPool() )
 	then
-		if (ag.getAppropriation > ag.getAllocation){
-			ag.setRole(NONMEMBER);//permission set?
-			$pool.setResourcelevel -= $iid.monitoringcost;//take monitoringcost out of pool
+		modify( $pool ) {
+			setResourceLevel( $pool.getResourceLevel() - $i.getMonitoringCost() ) 
 		}
-		else
-			//take monitoringcost out of pool
 end
 
+rule "Monitor member agents" //julia: check conditions
+	when
+		$i : Institution( $iid : id, $round : round, state == Phase.Appropriate )
+		Monitor( $ag : monitored, round == $round )
+		Agent( this == $ag, institutionId == $iid)
+		$pool : CommonPool( id == $ag.getPool() )
+		Allocation( player == $ag, round == $round, $quantity : quantity )
+		Appropriate(player == $ag, round == $round, pool == $pool, amount > $quantity )
+    then
+    	if($i.isPrinciple5()){
+    		//do graduated sanctions
+    	}
+    	else{
+    		$ag.setRole(Role.NONMEMBER);
+    	}
+end
+
+rule "Deduct nonmember monitoring cost" //julia: happens after appropriation!! 
+	when
+		$i : Institution( $iid : id, $round : round, state == Phase.Appropriate )
+		OutMonitor( $ag : outMonitored, round == $round )
+		Agent( this == $ag)
+		$pool : CommonPool( id == $ag.getPool() )
+	then
+		modify( $pool ) {
+			setResourceLevel( $pool.getResourceLevel() - $i.getOutMonitoringCost() ) 
+		}
+end
+
+rule "Sanction nonmembers and change appropriating frequency" //julia: check conditions
+	when
+		$i : Institution( $iid : id, $round : round, state == Phase.Appropriate )
+		OutMonitor( $ag : outMonitored, round == $round )
+		Agent( this == $ag, institutionId == $iid)
+		$pool : CommonPool( id == $ag.getPool() )
+		//Allocation( player == $ag, round == $round, $quantity : quantity)
+		Appropriate(player == $ag, round == $round, pool == $pool, amount > 0)
+    then
+    	// $ag.active = false;
+    	/*modify($i){//non-member-wide variables (or these variables could be tied to an institution => describes how hard/easy it is to appropriate there)
+			setOutAppropriationFrequency($i.getOutAppropriationFrequency() *$i.outImproveFrequency)//appropriate less in future rounds
+		}*/
+end
 

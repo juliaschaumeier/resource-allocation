@@ -15,6 +15,10 @@ public class Appropriate extends PlayerAction {
 		return pool;
 	}
 
+	public double getAmount() {
+		return amount;
+	}
+
 	@Override
 	public String toString() {
 		return "Appropriate [amount=" + amount + ", player=" + player + ", t="

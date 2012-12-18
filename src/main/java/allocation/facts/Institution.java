@@ -1,14 +1,22 @@
 package allocation.facts;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.Set;
 
+import org.drools.runtime.ObjectFilter;
+import org.drools.runtime.StatefulKnowledgeSession;
+
 import allocation.Phase;
 import allocation.actions.Demand;
+import allocation.agents.Agent;
+import allocation.agents.Role;
 
 public class Institution implements VisibilityHeadInstitution {
+
+	final StatefulKnowledgeSession session;
 
 	final int id;
 	Phase state = Phase.CFV;
@@ -26,17 +34,20 @@ public class Institution implements VisibilityHeadInstitution {
 	boolean voteRaMethod = false;
 
 	RaMethod allocationMethod = RaMethod.QUEUE;
-	double monitoringLevel;//julia: who sees it?? Head only?
-	double monitoringCost;//julia
-
+	double monitoringLevel;// julia: who sees it?? Head only?
+	double monitoringCost;// julia
+	double outMonitoringLevel;
+	double outMonitoringCost;
+	
 	Set<CommonPool> pools = new HashSet<CommonPool>();
 
 	Queue<Demand> demandQueue = new LinkedList<Demand>();
 
-	public Institution(int id, int initialAgents, boolean principle2,
-			boolean principle3, boolean principle4, boolean principle5,
-			boolean principle6) {
+	public Institution(StatefulKnowledgeSession session, int id,
+			int initialAgents, boolean principle2, boolean principle3,
+			boolean principle4, boolean principle5, boolean principle6) {
 		super();
+		this.session = session;
 		this.id = id;
 		this.principle2 = principle2;
 		this.principle3 = principle3;
@@ -133,15 +144,22 @@ public class Institution implements VisibilityHeadInstitution {
 	public void setAllocationMethod(RaMethod allocationMethod) {
 		this.allocationMethod = allocationMethod;
 	}
-	
-	public double getMonitoringLevel(){//julia
+
+	public double getMonitoringLevel() {// julia
 		return monitoringLevel;
 	}
-	
-	public double getMonitoringCost(){//julia
+
+	public double getMonitoringCost() {// julia
 		return monitoringCost;
 	}
 	
+	public double getOutMonitoringLevel() {// julia
+		return outMonitoringLevel;
+	}
+
+	public double getOutMonitoringCost() {// julia
+		return outMonitoringCost;
+	}
 
 	@Override
 	public String toString() {
@@ -153,6 +171,42 @@ public class Institution implements VisibilityHeadInstitution {
 	public Queue<Demand> getDemandQueue() {
 		return demandQueue;
 	}
-	
 
+	@Override
+	public Set<Agent> getMembers() {
+		Set<Agent> members = new HashSet<Agent>();
+		Collection<Object> memberObj = session.getObjects(new ObjectFilter() {
+			@Override
+			public boolean accept(Object object) {
+				if (object instanceof Agent) {
+					Agent ag = (Agent) object;
+					return ag.getInstitutionId() == getId()
+							&& ag.getRole() != Role.NONMEMBER;
+				}
+				return false;
+			}
+		});
+		for (Object o : memberObj) {
+			members.add((Agent) o);
+		}
+		return members;
+	}
+	
+	public Set<Agent> getNonmembers() {//julia: can be simpler?!
+		Set<Agent> nonmembers = new HashSet<Agent>();
+		Collection<Object> nonmemberObj = session.getObjects(new ObjectFilter() {
+			@Override
+			public boolean accept(Object object) {
+				if (object instanceof Agent) {
+					Agent ag = (Agent) object;
+					return ag.getRole() != Role.MEMBER;
+				}
+				return false;
+			}
+		});
+		for (Object o : nonmemberObj) {
+			nonmembers.add((Agent) o);
+		}
+		return nonmembers;
+	}
 }

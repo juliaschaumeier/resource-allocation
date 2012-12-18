@@ -1,3 +1,4 @@
+//http://www.horstmann.com/ccc/c_to_java.pdf // just for me... :-)
 package allocation;
 
 import java.util.HashSet;
@@ -63,6 +64,11 @@ public class Simulation extends InjectedSimulation {
 	public double outMonitoringLevel = 0.1;
 	@Parameter(name = "outMonitoringCost", optional = true)
 	public double outMonitoringCost = 0.1 * standardRequest;
+	@Parameter(name = "outAppropriationFrequency", optional = true)
+	public double outAppropriationFrequency = 0.1;
+	@Parameter(name = "outImproveFrequency", optional = true)
+	public double outImproveFrequency = 0.1;
+	
 
 	@Parameter(name = "principle2", optional = true)
 	public boolean principle2 = true;
@@ -116,7 +122,7 @@ public class Simulation extends InjectedSimulation {
 		CommonPool pool0 = new CommonPool(0, initialLevel, initialLevel);
 
 		// create a single institution governing the pool.
-		Institution i0 = new Institution(0, agents, principle2, principle3,
+		Institution i0 = new Institution(session, 0, agents, principle2, principle3,
 				principle4, principle5, principle6);
 		i0.addPool(pool0);
 		institutions.add(i0);

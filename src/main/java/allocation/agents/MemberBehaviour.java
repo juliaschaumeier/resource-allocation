@@ -41,11 +41,11 @@ class MemberBehaviour extends AgentBehaviour {
 			self.act(Vote.voteRaMethod(vote));
 		}
 		if (self.institution.isVoteHead()) {
-			// head vote here
+			// vote for head here
 		}
 	}
 
-	void demand() {
+	void demand() {//doesn't happen every round!!
 		if (self.active && self.institution.isPrinciple2()) {
 			self.act(new Demand(self.pool, self.preferredRequest));
 		}
@@ -57,7 +57,7 @@ class MemberBehaviour extends AgentBehaviour {
 			double appropriateAmount = 0;
 			if (self.institution.isPrinciple2()) {
 				if (self.compliancyDegree > 1) {
-					
+					//appropriate more than allowed
 				}
 			} else {
 				// principle 2 disabled: use preferredRequest

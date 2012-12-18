@@ -1,8 +1,10 @@
 package allocation.facts;
 
 import java.util.Queue;
+import java.util.Set;
 
 import allocation.actions.Demand;
+import allocation.agents.Agent;
 
 public interface VisibilityHeadInstitution extends VisibilityMemberInstitution {
 
@@ -13,5 +15,7 @@ public interface VisibilityHeadInstitution extends VisibilityMemberInstitution {
 	public void setVoteHead(boolean voteHead);
 
 	public Queue<Demand> getDemandQueue();
+
+	public Set<Agent> getMembers();
 
 }

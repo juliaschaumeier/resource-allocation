@@ -91,7 +91,7 @@ public class Agent extends AbstractParticipant {
 		super.incrementTime();
 		poolMonitor = poolService.getPool(pool);
 		institution = poolService.getInstitution(institutionId);
-		behav = AgentBehaviour.getBehaviour(this);
+		behav = AgentBehaviour.getBehaviour(this, behav);
 		behav.doBehaviour();
 	}
 
