@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?> 
+<process xmlns="http://drools.org/drools-5.0/process"
+         xmlns:xs="http://www.w3.org/2001/XMLSchema-instance"
+         xs:schemaLocation="http://drools.org/drools-5.0/process drools-processes-5.0.xsd"
+         type="RuleFlow" name="Simulation" id="allocation.Simulation" package-name="allocation" >
+
+  <header>
+  </header>
+
+  <nodes>
+    <start id="1" name="Start" x="100" y="100" width="48" height="48" />
+    <ruleSet id="3" name="Init" x="84" y="170" width="80" height="48" ruleFlowGroup="init" />
+    <end id="4" name="End" x="90" y="386" width="48" height="48" />
+    <ruleSet id="5" name="CFV" x="184" y="170" width="80" height="48" ruleFlowGroup="cfv" />
+    <ruleSet id="6" name="Vote" x="277" y="171" width="80" height="48" ruleFlowGroup="vote" />
+    <ruleSet id="7" name="Demand" x="370" y="171" width="80" height="48" ruleFlowGroup="demand" />
+    <ruleSet id="8" name="Allocate" x="374" y="237" width="80" height="48" ruleFlowGroup="allocate" />
+    <ruleSet id="9" name="Appropriate" x="276" y="237" width="80" height="48" ruleFlowGroup="appropriate" />
+  </nodes>
+
+  <connections>
+    <connection from="1" to="3" />
+    <connection from="9" to="4" />
+    <connection from="3" to="5" />
+    <connection from="5" to="6" />
+    <connection from="6" to="7" />
+    <connection from="7" to="8" />
+    <connection from="8" to="9" />
+  </connections>
+
+</process>

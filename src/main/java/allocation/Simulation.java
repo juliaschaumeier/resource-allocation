@@ -1,8 +1,11 @@
 //http://www.horstmann.com/ccc/c_to_java.pdf // just for me... :-)
 package allocation;
 
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 import org.apache.log4j.Logger;
 import org.drools.runtime.StatefulKnowledgeSession;
@@ -16,8 +19,6 @@ import uk.ac.imperial.presage2.core.simulator.InjectedSimulation;
 import uk.ac.imperial.presage2.core.simulator.Parameter;
 import uk.ac.imperial.presage2.core.simulator.Scenario;
 import uk.ac.imperial.presage2.core.util.random.Random;
-import uk.ac.imperial.presage2.rules.RuleModule;
-import uk.ac.imperial.presage2.rules.RuleStorage;
 import uk.ac.imperial.presage2.util.environment.AbstractEnvironmentModule;
 import uk.ac.imperial.presage2.util.network.NetworkModule;
 import allocation.actions.AgentActionHandler;
@@ -68,7 +69,6 @@ public class Simulation extends InjectedSimulation {
 	public double outAppropriationFrequency = 0.1;
 	@Parameter(name = "outImproveFrequency", optional = true)
 	public double outImproveFrequency = 0.1;
-	
 
 	@Parameter(name = "principle2", optional = true)
 	public boolean principle2 = true;
@@ -101,13 +101,13 @@ public class Simulation extends InjectedSimulation {
 	protected Set<AbstractModule> getModules() {
 		Set<AbstractModule> modules = new HashSet<AbstractModule>();
 
-		modules.add(new AbstractEnvironmentModule()
+		/*modules.add(new AbstractEnvironmentModule()
 				.addActionHandler(AgentActionHandler.class)
 				.addParticipantGlobalEnvironmentService(PoolService.class)
 				.setStorage(RuleStorage.class));
 		modules.add(new RuleModule().addClasspathDrlFile("environment.drl")
 				.addClasspathDrlFile("institution.drl"));
-		modules.add(NetworkModule.noNetworkModule());
+		modules.add(NetworkModule.noNetworkModule());*/
 
 		return modules;
 	}
@@ -122,8 +122,8 @@ public class Simulation extends InjectedSimulation {
 		CommonPool pool0 = new CommonPool(0, initialLevel, initialLevel);
 
 		// create a single institution governing the pool.
-		Institution i0 = new Institution(session, 0, agents, principle2, principle3,
-				principle4, principle5, principle6);
+		Institution i0 = new Institution(session, 0, agents, principle2,
+				principle3, principle4, principle5, principle6);
 		i0.addPool(pool0);
 		institutions.add(i0);
 
@@ -149,13 +149,13 @@ public class Simulation extends InjectedSimulation {
 				a = new Agent("elf " + i, 1 - altrMax * Random.randomDouble(),
 						standardRequest, 0, 0, role);
 			}
-			s.addParticipant(a);
+			//s.addParticipant(a);
 			session.insert(a);
 
 		}
 
 		// create agents outside the institution
-		for (int i = 0; i < outAgents; i++) {//julia
+		for (int i = 0; i < outAgents; i++) {// julia
 			Agent a;
 			Role role = Role.NONMEMBER;
 			if (i < outNumCheat) {
@@ -167,11 +167,23 @@ public class Simulation extends InjectedSimulation {
 				a = new Agent("outelf " + i, 1 - altrMax
 						* Random.randomDouble(), standardRequest, 0, 0, role);
 			}
-			s.addParticipant(a);
+			//s.addParticipant(a);
 			session.insert(a);
 
 		}
 
+	}
+
+	void parseParameters(String[] args) throws Exception {
+		// check for parameters in args
+		Map<String, String> providedParams = new HashMap<String, String>();
+		for (int i = 0; i < args.length; i++) {
+			if (Pattern.matches("([a-zA-Z0-9_]+)=([a-zA-Z0-9_.,])+$", args[i])) {
+				String[] pieces = args[i].split("=", 2);
+				providedParams.put(pieces[0], pieces[1]);
+			}
+		}
+		setParameters(providedParams);
 	}
 
 	/**

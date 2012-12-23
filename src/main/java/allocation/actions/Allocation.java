@@ -2,17 +2,16 @@ package allocation.actions;
 
 import allocation.agents.Agent;
 
-public class Allocation extends PlayerAction {
+public class Allocation {
 
+	final int round;
+	final String agent;
 	final public double quantity;
 
-	public Allocation(double quantity) {
+	public Allocation(int t, String agent, double quantity) {
 		super();
-		this.quantity = quantity;
-	}
-
-	public Allocation(int t, Agent player, double quantity) {//not tied to pool or Institution??
-		super(t, player);
+		this.round = t;
+		this.agent = agent;
 		this.quantity = quantity;
 	}
 
@@ -20,9 +19,17 @@ public class Allocation extends PlayerAction {
 		return quantity;
 	}
 
+	public int getRound() {
+		return round;
+	}
+
+	public String getAgent() {
+		return agent;
+	}
+
 	@Override
 	public String toString() {
-		return "Allocation [quantity=" + quantity + ", player=" + player
+		return "Allocation [quantity=" + quantity + ", agent=" + agent
 				+ ", round=" + round + "]";
 	}
 

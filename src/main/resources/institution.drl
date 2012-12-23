@@ -3,7 +3,7 @@ package allocation
 import allocation.*
 import allocation.facts.*
 import allocation.actions.*
-import allocation.agents.*
+import allocation.newagents.*
 import uk.ac.imperial.presage2.core.IntegerTime
 import java.util.HashMap
 import java.util.List
@@ -11,25 +11,28 @@ import java.util.Set
 
 global org.apache.log4j.Logger logger
 
-rule "Mark VoteCalled when valid cfv"
+rule "Call for votes"
+	ruleflow-group 'cfv'
+	no-loop
 	when
-		$cfv : CallForVote( $ag : player, player.role == Role.HEAD, $round : round )
-		Agent( this == $ag, $iid : institutionId )
-		not( exists( Processed( $cfv ;) ) )
-		$inst : Institution( id == $iid, round == $round )
+		IntegerTime()
+		$head : Head( $iid : institutionId )
+		$i : Institution( id == $iid )
 	then
-		modify($inst) {
-			setVoteHead( $cfv.isHead() ),
-			setVoteRaMethod( $cfv.isRaMethod() )
+		CallForVote cfv = $head.callForVotes( $i );
+		if(cfv != null) {
+			modify( $i ) {
+				setVoteHead( cfv.isHead() ),
+				setVoteRaMethod( cfv.isRaMethod() )
+			}
+			logger.info(cfv);
 		}
-		insert( new Processed( $cfv ) );
-		logger.info($cfv);
 end
 
 rule "Disable votes"
+	ruleflow-group 'init'
 	when 
-		$inst : Institution( $iid : id, $round : round, ( voteHead == true || voteRaMethod == true ) )
-		not( CallForVote( player.institutionId == $iid, round == $round ) )
+		$inst : Institution( voteHead || voteRaMethod )
 	then
 		modify($inst) {
 			setVoteHead( false ),
@@ -37,12 +40,34 @@ rule "Disable votes"
 		}
 end
 
+rule "Vote RA method"
+	salience 1000
+	ruleflow-group 'vote'
+	when
+		$t : IntegerTime( )
+		$member : Member( $iid : institutionId, $pid : pool )
+		$i : Institution( id == $iid, voteRaMethod )
+		$pool : CommonPool( id == $pid )
+	then
+		Vote v = $member.vote( $i, $pool, "raMethod" );
+		if(v != null) {
+			v.setVoter( $member.getName() );
+			v.setRound( $t.intValue() );
+			insert(v);
+			logger.info(v);
+		}
+end
+
 rule "Declare vote winner"
+	ruleflow-group 'vote'
 	when
 		Institution( $iid : id, $round : round )
-		Vote( player.institutionId == $iid, round == $round, $b : ballot )
+		Vote( $ag : voter, round == $round, $b : ballot )
+		Member( name == $ag, institutionId == $iid )
 		not Declared( institution == $iid, ballot == $b, round == $round )
-		$votes : List( size > 0 ) from collect( Vote( player.institutionId == $iid, round == $round, ballot == $b ) )
+		$votes : List( size > 0 ) from accumulate( 
+			$v : Vote( $voter : voter, round == $round, ballot == $b ) and 
+			Member( name == $voter, institutionId == $iid ) , collectList($v) )
 	then
 		HashMap<Integer, Integer> tally = new HashMap<Integer, Integer>();
 		for( Object o : $votes ) {
@@ -57,6 +82,7 @@ rule "Declare vote winner"
 end
 
 rule "Echo declared"
+	ruleflow-group 'vote'
 	when
 		$d : Declared()
 	then
@@ -64,6 +90,7 @@ rule "Echo declared"
 end
 
 rule "Update Ra method"
+	ruleflow-group 'vote'
 	when
 		$d : Declared( ballot == "raMethod", $iid : institution )
 		$i : Institution( id == $iid, round == $d.round )
@@ -81,46 +108,83 @@ rule "Update Ra method"
 		logger.info("Allocation method for institution "+ $iid +" set to "+ $i.getAllocationMethod()); 
 end
 
+rule "Member Demands"
+	salience 1000
+	ruleflow-group 'demand'
+	when
+		$inst : Institution( $iid : id, $round : round, $pools : pools, principle2 == true )
+		$pool : CommonPool( this memberOf $pools )
+		$member : Member( institutionId == $iid )
+	then
+		insert( new Demand( $round, $pool.getId(), $member.getName(), $member.demand( $inst, $pool ) ) );
+end
+
 rule "Do allocation"
+	ruleflow-group 'allocate'
 	when
 		// get an institution in allocate phase
-		$inst : Institution( $iid : id, $round : round, $pools : pools, state == Phase.Allocate )
+		$inst : Institution( $iid : id, $round : round, $pools : pools )
 		// get a pool from this institution
 		$pool : CommonPool( this memberOf $pools )
 		// get the head
-		$ag : Agent( role == Role.HEAD, institutionId == $iid )
+		$ag : Head( institutionId == $iid )
 		// get demands for this pool
 		$demands : List( size > 0 ) from collect( Demand( pool == $pool.id ) )
 	then
 		logger.info( $ag );
 		logger.info( $demands );
-		Set<Allocation> allocations = $ag.doAllocation($pool, $demands);
+		Set<Allocation> allocations = $ag.allocate($inst, $pool, $demands);
 		logger.info(allocations);
 		for(Allocation a : allocations) {
 			insert(a);
 		}
 end
 
-rule "Notify agents of allocations"
+rule "Member appropriation - no allocation"
+	salience 1000
+	ruleflow-group "appropriate"
+	no-loop
 	when
-		Institution( $iid : id, $round : round )
-		$all : Allocation( $ag : player, round == $round )
-		not Processed( $all ;)
-		Agent( this == $ag, institutionId == $iid )
+		$t : IntegerTime( )
+		$member : Member( $iid : institutionId, $pid : pool )
+		$i : Institution( id == $iid, $round : round )
+		$pool : CommonPool( id == $pid )
+		not Appropriated( round == $t.intValue(), agent == $member.getName() )
+		not Allocation( round == $round, agent == $member.getName() )
 	then
-		$ag.setAllocation($all);
-		insert( new Processed($all) );
+		double appropriatedAmount = $member.appropriate( $i, $pool, null );
+		Appropriated app = new Appropriated( $member.getName(), $t.intValue(), appropriatedAmount );
+		insert( app );
+		modify($pool) {
+			setResourceLevel( $pool.getResourceLevel() - appropriatedAmount )
+		}
+		logger.info(app);
+		logger.info($pool);
 end
 
-rule "Reset allocations"
+rule "Member appropriation - allocated"
+	salience 1000
+	ruleflow-group "appropriate"
+	no-loop
 	when
-		Institution( $iid : id, $round : round, state == Phase.CFV )
-		$ag : Agent( )
+		$t : IntegerTime( )
+		$member : Member( $iid : institutionId, $pid : pool )
+		$i : Institution( id == $iid, $round : round )
+		$pool : CommonPool( id == $pid )
+		not Appropriated( round == $t.intValue(), agent == $member.getName() )
+		$all : Allocation( round == $round, agent == $member.getName() )
 	then
-		$ag.setAllocation(null);
+		double appropriatedAmount = $member.appropriate( $i, $pool, $all );
+		Appropriated app = new Appropriated( $member.getName(), $t.intValue(), appropriatedAmount );
+		insert( app );
+		modify($pool) {
+			setResourceLevel( $pool.getResourceLevel() - appropriatedAmount )
+		}
+		logger.info(app);
+		logger.info($pool);
 end
 
-rule "Deduct member monitoring cost" //julia: happens after appropriation!! 
+/*rule "Deduct member monitoring cost" //julia: happens after appropriation!! 
 	when
 		$i : Institution( $iid : id, $round : round, state == Phase.Appropriate )
 		Monitor( $ag : monitored, round == $round )
@@ -174,5 +238,5 @@ rule "Sanction nonmembers and change appropriating frequency" //julia: check con
     	/*modify($i){//non-member-wide variables (or these variables could be tied to an institution => describes how hard/easy it is to appropriate there)
 			setOutAppropriationFrequency($i.getOutAppropriationFrequency() *$i.outImproveFrequency)//appropriate less in future rounds
 		}*/
-end
+//end
 

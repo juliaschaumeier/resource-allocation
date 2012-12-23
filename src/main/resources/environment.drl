@@ -3,7 +3,7 @@ package allocation
 import allocation.*
 import allocation.facts.*
 import allocation.actions.*
-import allocation.agents.*
+import allocation.newagents.*
 import uk.ac.imperial.presage2.core.IntegerTime
 import java.lang.Math
 
@@ -14,13 +14,14 @@ declare Processed
 end
 
 declare Appropriated
-	agent : Agent
+	agent : String
 	round : int
 	quantity : double
 end
 
 rule "Max level" // Given an overfilled CommonPool, reset resource level to maximum
 	salience -11
+	ruleflow-group 'init'
 	when
 		$pool : CommonPool( resourceLevel > maxLevel, $max : maxLevel)
 	then
@@ -32,13 +33,14 @@ end
 
 rule "Refill pool"
 	salience -10
+	ruleflow-group 'init'
 	when
 		// when a new round occurs
 		$t : IntegerTime() 
 		// and there is a pool which has not been filled in this round
 		$pool : CommonPool( $t.intValue() > getLastFilled())
 		// and the institution governing this pool is in the 'Exclude' phase
-		Institution( state == Phase.Exclude, pools contains $pool )
+		Institution( pools contains $pool )
 	then // refill pool
 		double fillAmount = $pool.getMaxLevel() / 2;
 		int time = $t.intValue();
@@ -70,33 +72,27 @@ rule "Refill pool"
 		logger.info("Fill resource by "+ fillAmount +", pool resource level is "+ $pool.getResourceLevel() );
 end
 
-rule "Take out of pool"
+rule "NonMember appropriation"
+	salience 1000
+	ruleflow-group "appropriate"
+	no-loop
 	when
-		// A player $ag has appropriated from pool $pid in round $round
-		$a : Appropriate( $pid : pool, $ag : player, $round : round )
-		// This player has not already arready appropriated in this round
-		not( Appropriated( agent == $ag, round == $round ) )
-		// This action has not already been processed
-		not( exists( Processed( $a ;) ) )
-		// Get pool the action occurs in
+		$t : IntegerTime( )
+		$nonmember : NonMember( $pid : pool )
 		$pool : CommonPool( id == $pid )
-		// The institution governing the pool is in the appropriate phase
-		Institution( pools contains $pool, state == Phase.Appropriate, round == $round )
-		// Check that this agent can appropriate from this pool
-		Agent( this == $ag, getPool() == $pid )
+		not Appropriated( round == $t.intValue(), agent == $nonmember.getName() )
 	then
-		// Create Appropriated fact
-		insert( new Appropriated( $ag, $round, Math.min( $a.amount, $pool.getResourceLevel() ) ) );
-		// modify the resource level in the pool
+		Appropriated app = new Appropriated( $nonmember.getName(), $t.intValue(), $nonmember.appropriate( $pool ) );
+		insert( app );
 		modify($pool) {
-			setResourceLevel( $pool.getResourceLevel() - $a.amount )
+			setResourceLevel( $pool.getResourceLevel() - app.getQuantity() )
 		}
-		// mark action as processed
-		insert( new Processed( $a ) );
-		logger.info($a);
+		logger.info(app);
+		logger.info($pool);
 end
 
 rule "End of the world"
+	ruleflow-group 'init'
 	when
 		$pool : CommonPool( resourceLevel < 0 )
 	then

@@ -2,9 +2,11 @@ package allocation.actions;
 
 import allocation.facts.RaMethod;
 
-public class Vote extends PlayerAction {
+public class Vote {
 
+	String voter;
 	final String ballot;
+	int round;
 	final int value;
 
 	public Vote(String ballot, int value) {
@@ -25,10 +27,26 @@ public class Vote extends PlayerAction {
 		return value;
 	}
 
+	public String getVoter() {
+		return voter;
+	}
+
+	public void setVoter(String voter) {
+		this.voter = voter;
+	}
+
+	public int getRound() {
+		return round;
+	}
+
+	public void setRound(int round) {
+		this.round = round;
+	}
+
 	@Override
 	public String toString() {
-		return "Vote [ballot=" + ballot + ", value=" + value + ", player="
-				+ player + ", round=" + round + "]";
+		return "Vote [ballot=" + ballot + ", value=" + value + ", voter="
+				+ voter + ", round=" + round + "]";
 	}
 
 }
