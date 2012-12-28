@@ -16,14 +16,11 @@ import org.drools.logger.KnowledgeRuntimeLogger;
 import org.drools.logger.KnowledgeRuntimeLoggerFactory;
 import org.drools.runtime.KnowledgeSessionConfiguration;
 import org.drools.runtime.StatefulKnowledgeSession;
-import org.drools.runtime.process.ProcessInstance;
 
 import uk.ac.imperial.presage2.core.IntegerTime;
 import uk.ac.imperial.presage2.core.Time;
 import uk.ac.imperial.presage2.core.simulator.RunnableSimulation;
 import uk.ac.imperial.presage2.core.util.random.Random;
-import allocation.agents.Agent;
-import allocation.agents.Role;
 import allocation.facts.CommonPool;
 import allocation.facts.Institution;
 import allocation.newagents.Head;
@@ -143,6 +140,7 @@ public class DroolsSimulation {
 			session.insert(a);
 		}
 
+		// simulation loop
 		try {
 			while (t.intValue() < sim.finishTime) {
 				logger.info("Round " + t.intValue());
@@ -154,5 +152,7 @@ public class DroolsSimulation {
 		} finally {
 			droolsLogger.close();
 		}
+		
+		logger.info("Finished!");
 	}
 }

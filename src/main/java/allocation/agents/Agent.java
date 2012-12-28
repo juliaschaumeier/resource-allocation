@@ -1,24 +1,13 @@
 package allocation.agents;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
+import org.drools.factmodel.traits.Traitable;
 
-import uk.ac.imperial.presage2.core.Action;
-import uk.ac.imperial.presage2.core.environment.ActionHandlingException;
-import uk.ac.imperial.presage2.core.environment.UnavailableServiceException;
-import uk.ac.imperial.presage2.core.messaging.Input;
 import uk.ac.imperial.presage2.core.util.random.Random;
-import uk.ac.imperial.presage2.util.participant.AbstractParticipant;
-import allocation.PoolService;
-import allocation.actions.Allocation;
-import allocation.actions.Demand;
-import allocation.facts.CommonPool;
-import allocation.facts.Institution;
-import allocation.facts.VisibilityResource;
 
-public class Agent extends AbstractParticipant {
+@Traitable
+public class Agent {
 
+	String name;
 	int pool;
 	int institutionId;
 	final double compliancyDegree;
@@ -28,15 +17,10 @@ public class Agent extends AbstractParticipant {
 	Role role;
 	Behaviour behav;
 
-	PoolService poolService;
-	VisibilityResource poolMonitor;
-	Institution institution;
-
-	Allocation allocation = null;
-
 	public Agent(String name, double compliancyDegree, double standardRequest,
 			int pool, int iid, Role initialRole) {
-		super(Random.randomUUID(), name);
+		super();
+		this.name = name;
 		this.compliancyDegree = compliancyDegree;
 		// oscillate with an amplitude of 0.1
 		this.standardRequest = standardRequest;
@@ -46,16 +30,6 @@ public class Agent extends AbstractParticipant {
 		this.institutionId = iid;
 		this.role = initialRole;
 		// role = (this.institutionId >= 0 ? Role.MEMBER : Role.NONMEMBER);
-	}
-
-	@Override
-	public void initialise() {
-		super.initialise();
-		try {
-			poolService = getEnvironmentService(PoolService.class);
-		} catch (UnavailableServiceException e) {
-			logger.warn("No pool service");
-		}
 	}
 
 	public int getPool() {
@@ -74,19 +48,19 @@ public class Agent extends AbstractParticipant {
 		this.role = role;
 	}
 
-	public Allocation getAllocation() {
-		return allocation;
+	public String getName() {
+		return name;
 	}
 
-	public void setAllocation(Allocation allocation) {
-		this.allocation = allocation;
+	public boolean isActive() {
+		return active;
 	}
 
-	@Override
-	protected void processInput(Input in) {
+	public void setActive(boolean active) {
+		this.active = active;
 	}
 
-	@Override
+	/*@Override
 	public void incrementTime() {
 		super.incrementTime();
 		poolMonitor = poolService.getPool(pool);
@@ -109,6 +83,10 @@ public class Agent extends AbstractParticipant {
 		} catch (ActionHandlingException e) {
 			logger.warn("Couldn't act", e);
 		}
+	}*/
+	
+	public double appropriate() {
+		return 0;
 	}
 
 }

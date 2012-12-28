@@ -6,10 +6,11 @@ import java.util.List;
 import java.util.Queue;
 import java.util.Set;
 
+import uk.ac.imperial.presage2.core.util.random.Random;
+
 import allocation.actions.Allocation;
 import allocation.actions.CallForVote;
 import allocation.actions.Demand;
-import allocation.agents.Agent;
 import allocation.facts.CommonPool;
 import allocation.facts.Institution;
 
@@ -73,6 +74,32 @@ public class Head extends Member {
 			break;
 		}
 		return allocations;
+	}
+
+	public Set<String> monitor(Institution i, CommonPool pool,
+			Set<Member> members, Set<Agent> nonMembers) {
+		Set<String> toMonitor = new HashSet<String>();
+		// member monitoring
+		if (i.isPrinciple4()) {
+			monitoring = 0;
+			for (Member ag : members) {
+				if (ag.active && Random.randomDouble() < i.getMonitoringLevel()) {
+					toMonitor.add(ag.getName());
+					monitoring++;
+				}
+			}
+		}
+		if (i.isPrinciple1()) {
+			outMonitoring = 0;
+			for (Agent ag : nonMembers) {
+				if (ag.active
+						&& Random.randomDouble() < i.getOutMonitoringLevel()) {
+					toMonitor.add(ag.getName());
+					outMonitoring++;
+				}
+			}
+		}
+		return toMonitor;
 	}
 
 }

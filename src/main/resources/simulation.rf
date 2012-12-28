@@ -10,22 +10,28 @@
   <nodes>
     <start id="1" name="Start" x="100" y="100" width="48" height="48" />
     <ruleSet id="3" name="Init" x="84" y="170" width="80" height="48" ruleFlowGroup="init" />
-    <end id="4" name="End" x="90" y="386" width="48" height="48" />
+    <end id="4" name="End" x="102" y="386" width="48" height="48" />
     <ruleSet id="5" name="CFV" x="184" y="170" width="80" height="48" ruleFlowGroup="cfv" />
     <ruleSet id="6" name="Vote" x="277" y="171" width="80" height="48" ruleFlowGroup="vote" />
     <ruleSet id="7" name="Demand" x="370" y="171" width="80" height="48" ruleFlowGroup="demand" />
     <ruleSet id="8" name="Allocate" x="374" y="237" width="80" height="48" ruleFlowGroup="allocate" />
     <ruleSet id="9" name="Appropriate" x="276" y="237" width="80" height="48" ruleFlowGroup="appropriate" />
+    <ruleSet id="10" name="Report" x="183" y="237" width="80" height="48" ruleFlowGroup="report" />
+    <ruleSet id="11" name="Appeal" x="84" y="236" width="80" height="48" ruleFlowGroup="appeal" />
+    <ruleSet id="12" name="Exclude" x="88" y="301" width="80" height="48" ruleFlowGroup="exclude" />
   </nodes>
 
   <connections>
     <connection from="1" to="3" />
-    <connection from="9" to="4" />
+    <connection from="12" to="4" />
     <connection from="3" to="5" />
     <connection from="5" to="6" />
     <connection from="6" to="7" />
     <connection from="7" to="8" />
     <connection from="8" to="9" />
+    <connection from="9" to="10" />
+    <connection from="10" to="11" />
+    <connection from="11" to="12" />
   </connections>
 
 </process>

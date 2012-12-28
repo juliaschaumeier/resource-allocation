@@ -34,10 +34,10 @@ public class Institution implements VisibilityHeadInstitution {
 	boolean voteRaMethod = false;
 
 	RaMethod allocationMethod = RaMethod.QUEUE;
-	double monitoringLevel;// julia: who sees it?? Head only?
-	double monitoringCost;// julia
-	double outMonitoringLevel;
-	double outMonitoringCost;
+	double monitoringLevel = 0.5;// julia: who sees it?? Head only?
+	double monitoringCost = 5;// julia
+	double outMonitoringLevel = 0.5;
+	double outMonitoringCost = 5;
 	
 	Set<CommonPool> pools = new HashSet<CommonPool>();
 

@@ -11,6 +11,32 @@ import java.util.Set
 
 global org.apache.log4j.Logger logger
 
+declare TaskExecuted
+	institution : Institution
+	task : String
+	round : int
+end
+
+declare Monitored
+	agent : String
+	round : int
+end
+
+declare Deducted
+	monitor : Monitored
+end
+
+rule "Increment round"
+	ruleflow-group 'init'
+	when
+		$t : IntegerTime()
+		$i : Institution( round < $t.intValue() )
+	then
+		modify($i) {
+			incrementRound()
+		}
+end
+
 rule "Call for votes"
 	ruleflow-group 'cfv'
 	no-loop
@@ -184,48 +210,58 @@ rule "Member appropriation - allocated"
 		logger.info($pool);
 end
 
-/*rule "Deduct member monitoring cost" //julia: happens after appropriation!! 
+rule "Monitor agents"
+	ruleflow-group "appropriate"
+	salience 1000
 	when
-		$i : Institution( $iid : id, $round : round, state == Phase.Appropriate )
-		Monitor( $ag : monitored, round == $round )
-		Agent( this == $ag, institutionId == $iid )
-		$pool : CommonPool( id == $ag.getPool() )
+		$i : Institution( $iid : id, $round : round )
+		not TaskExecuted( $i, "monitor", $round ;)
+		$head : Head( institutionId == $iid, $pid : pool )
+		$pool : CommonPool( id == $pid )
+		$members : Set( ) from collect( Member( institutionId == $iid ) )
+		$nonMembers : Set( ) from collect( Agent( pool == $pid ) )
+	then
+		Set<String> monitored = $head.monitor( $i, $pool, $members, $nonMembers );
+		logger.info(monitored);
+		for( String agent : monitored ) {
+			insert( new Monitored( agent, $round ) );
+		}
+		insert( new TaskExecuted( $i, "monitor", $round ) );
+end
+
+rule "Deduct member monitoring cost" //julia: happens after appropriation!! 
+	ruleflow-group "appropriate"
+	no-loop
+	when
+		$i : Institution( $iid : id, $round : round )
+		$m : Monitored( $name : agent, round == $round )
+		not Deducted( $m ;)
+		Member( name == $name, institutionId == $iid, $pid : pool )
+		$pool : CommonPool( id == $pid )
 	then
 		modify( $pool ) {
 			setResourceLevel( $pool.getResourceLevel() - $i.getMonitoringCost() ) 
 		}
-end
-
-rule "Monitor member agents" //julia: check conditions
-	when
-		$i : Institution( $iid : id, $round : round, state == Phase.Appropriate )
-		Monitor( $ag : monitored, round == $round )
-		Agent( this == $ag, institutionId == $iid)
-		$pool : CommonPool( id == $ag.getPool() )
-		Allocation( player == $ag, round == $round, $quantity : quantity )
-		Appropriate(player == $ag, round == $round, pool == $pool, amount > $quantity )
-    then
-    	if($i.isPrinciple5()){
-    		//do graduated sanctions
-    	}
-    	else{
-    		$ag.setRole(Role.NONMEMBER);
-    	}
+		insert( new Deducted( $m ) );
 end
 
 rule "Deduct nonmember monitoring cost" //julia: happens after appropriation!! 
+	ruleflow-group "appropriate"
+	no-loop
 	when
-		$i : Institution( $iid : id, $round : round, state == Phase.Appropriate )
-		OutMonitor( $ag : outMonitored, round == $round )
-		Agent( this == $ag)
-		$pool : CommonPool( id == $ag.getPool() )
+		$pool : CommonPool( $pid : id )
+		$i : Institution( $round : round, pools contains $pool )
+		$m : Monitored( $name : agent, round == $round )
+		not Deducted( $m ;)
+		NonMember( name == $name, pool == $pid )
 	then
 		modify( $pool ) {
 			setResourceLevel( $pool.getResourceLevel() - $i.getOutMonitoringCost() ) 
 		}
+		insert( new Deducted( $m ) );
 end
 
-rule "Sanction nonmembers and change appropriating frequency" //julia: check conditions
+/*rule "Sanction nonmembers and change appropriating frequency" //julia: check conditions
 	when
 		$i : Institution( $iid : id, $round : round, state == Phase.Appropriate )
 		OutMonitor( $ag : outMonitored, round == $round )
