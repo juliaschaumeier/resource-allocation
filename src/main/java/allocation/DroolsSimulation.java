@@ -50,7 +50,7 @@ public class DroolsSimulation {
 		sim.parseParameters(args);
 
 		// drools initialisation
-		String[] ruleSets = { "environment.drl", "agents.drl", "institution.drl" };
+		String[] ruleSets = { "environment.drl", "institution.drl" };
 		KnowledgeBuilder kbuilder = KnowledgeBuilderFactory
 				.newKnowledgeBuilder();
 		// compile rule files
@@ -115,15 +115,18 @@ public class DroolsSimulation {
 			// set the first agent to be the head initially.
 			if (i == 0) {
 				a = new Head("elf " + i, 1 + sim.greedMax
-						* Random.randomDouble(), sim.standardRequest, 0, 0);
+						* Random.randomDouble(), sim.standardRequest,
+						sim.noRequestPercentage, 0, 0);
 			} else if (i < sim.numCheat) {
 				// cheating member
 				a = new Member("elf " + i, 1 + sim.greedMax
-						* Random.randomDouble(), sim.standardRequest, 0, 0);
+						* Random.randomDouble(), sim.standardRequest,
+						sim.noRequestPercentage, 0, 0);
 			} else {
 				// good member
 				a = new Member("elf " + i, 1 - sim.altrMax
-						* Random.randomDouble(), sim.standardRequest, 0, 0);
+						* Random.randomDouble(), sim.standardRequest,
+						sim.noRequestPercentage, 0, 0);
 			}
 			session.insert(a);
 		}
@@ -152,7 +155,7 @@ public class DroolsSimulation {
 		} finally {
 			droolsLogger.close();
 		}
-		
+
 		logger.info("Finished!");
 	}
 }

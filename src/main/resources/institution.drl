@@ -22,11 +22,19 @@ declare Monitored
 	round : int
 end
 
+declare Declared
+	institution : int
+	ballot : String
+	round : int
+	result : int
+end
+
 declare Deducted
 	monitor : Monitored
 end
 
-rule "Increment round"
+//sets IntegerTime and round number to be the same
+rule "Increment round" 
 	ruleflow-group 'init'
 	when
 		$t : IntegerTime()
@@ -34,6 +42,28 @@ rule "Increment round"
 	then
 		modify($i) {
 			incrementRound()
+		}
+end
+
+rule "Count members"
+	ruleflow-group 'init'
+	when
+		$i : Institution( $iid : id, $count : memberCount )
+		List( size != $count, $members : size ) from collect( Member( institutionId == $iid ) )
+	then
+		modify($i) {
+			setMemberCount( $members );
+		}
+end
+
+rule "Disable votes" //head renews it every timestep in CFV
+	ruleflow-group 'init'
+	when 
+		$inst : Institution( voteHead || voteRaMethod )
+	then
+		modify($inst) {
+			setVoteHead( false ),
+			setVoteRaMethod( false )
 		}
 end
 
@@ -48,81 +78,71 @@ rule "Call for votes"
 		CallForVote cfv = $head.callForVotes( $i );
 		if(cfv != null) {
 			modify( $i ) {
-				setVoteHead( cfv.isHead() ),
+				setVoteHead( cfv.isHead() ),	
 				setVoteRaMethod( cfv.isRaMethod() )
 			}
 			logger.info(cfv);
 		}
 end
 
-rule "Disable votes"
-	ruleflow-group 'init'
-	when 
-		$inst : Institution( voteHead || voteRaMethod )
-	then
-		modify($inst) {
-			setVoteHead( false ),
-			setVoteRaMethod( false )
-		}
-end
 
-rule "Vote RA method"
+rule "Vote for RA method"
 	salience 1000
 	ruleflow-group 'vote'
 	when
-		$t : IntegerTime( )
 		$member : Member( $iid : institutionId, $pid : pool )
-		$i : Institution( id == $iid, voteRaMethod )
+		$i : Institution( id == $iid, voteRaMethod, $r : round )
 		$pool : CommonPool( id == $pid )
 	then
 		Vote v = $member.vote( $i, $pool, "raMethod" );
 		if(v != null) {
 			v.setVoter( $member.getName() );
-			v.setRound( $t.intValue() );
+			v.setRound( $r );
 			insert(v);
 			logger.info(v);
 		}
 end
 
-rule "Declare vote winner"
+rule "Count votes"
 	ruleflow-group 'vote'
 	when
 		Institution( $iid : id, $round : round )
 		Vote( $ag : voter, round == $round, $b : ballot )
 		Member( name == $ag, institutionId == $iid )
-		not Declared( institution == $iid, ballot == $b, round == $round )
+		not VoteCount( institution == $iid, ballot == $b, round == $round )
 		$votes : List( size > 0 ) from accumulate( 
 			$v : Vote( $voter : voter, round == $round, ballot == $b ) and 
 			Member( name == $voter, institutionId == $iid ) , collectList($v) )
 	then
 		HashMap<Integer, Integer> tally = new HashMap<Integer, Integer>();
 		for( Object o : $votes ) {
-			Vote v = (Vote) o;
+			Vote v = (Vote) o; // vote->(ballot,value)
 			if(tally.containsKey(v.getValue())) {
 				tally.put(v.getValue(), tally.get(v.getValue()) + 1);
 			} else {
 				tally.put(v.getValue(), 1);
 			}
 		}
-		insert( new Declared( $iid, $b, $round, tally ) );
+		insert( new VoteCount( $iid, $b, $round, tally ) );
 end
 
-rule "Echo declared"
+
+rule "Echo Votes Counted"
 	ruleflow-group 'vote'
 	when
-		$d : Declared()
+		$vc : VoteCount()
 	then
-		logger.info( $d );
+		logger.info( $vc );
 end
 
-rule "Update Ra method"
+rule "Declare winner and update Ra method" //if votes equal, nothing happens;
 	ruleflow-group 'vote'
 	when
-		$d : Declared( ballot == "raMethod", $iid : institution )
-		$i : Institution( id == $iid, round == $d.round )
+		$vc : VoteCount( ballot == "raMethod", $iid : institution )
+		$i : Institution( id == $iid, round == $vc.round )
 	then
-		Integer forQueue = $d.result.get(RaMethod.QUEUE.ordinal());
-		Integer forRation = $d.result.get(RaMethod.RATION.ordinal());
+		Integer forQueue = $vc.result.get(RaMethod.QUEUE.ordinal());
+		Integer forRation = $vc.result.get(RaMethod.RATION.ordinal());
 		if(forQueue == null) forQueue = 0;
 		if(forRation == null) forRation = 0;
 
@@ -131,8 +151,29 @@ rule "Update Ra method"
 		} else if(forRation > forQueue) {
 			$i.setAllocationMethod( RaMethod.RATION );
 		}
+		insert(new Declared( $iid, $vc.ballot, $vc.round, $i.getAllocationMethod().ordinal() ));
 		logger.info("Allocation method for institution "+ $iid +" set to "+ $i.getAllocationMethod()); 
 end
+
+rule "Echo Declared"
+	ruleflow-group 'vote'
+	when
+		$d : Declared()
+	then
+		logger.info( $d );
+end
+
+rule "Reset demand-queue if necessary"
+	ruleflow-group 'vote'
+	when 
+		$i : Institution( $iid : id , $r : round )
+		Declared(institution == $iid, ballot == "raMethod",  result == RaMethod.RATION.ordinal(), round == $r ) //how to make sure we're in the current round??
+		Declared(institution == $iid, ballot == "raMethod", result == RaMethod.QUEUE.ordinal(), $rb : round, $rb < $r)
+		not Declared(institution == $iid, ballot == "raMethod", result == RaMethod.RATION.ordinal(), round > $rb)
+	then
+		$i.demandQueue.clear();
+end
+		
 
 rule "Member Demands"
 	salience 1000
@@ -141,11 +182,13 @@ rule "Member Demands"
 		$inst : Institution( $iid : id, $round : round, $pools : pools, principle2 == true )
 		$pool : CommonPool( this memberOf $pools )
 		$member : Member( institutionId == $iid )
+		//agent's demand not in queue:
+		not Demand( agent == $member.name, round < $round, this memberOf $inst.demandQueue )
 	then
 		insert( new Demand( $round, $pool.getId(), $member.getName(), $member.demand( $inst, $pool ) ) );
 end
 
-rule "Do allocation"
+rule "Do allocation - raMethod QUEUE"
 	ruleflow-group 'allocate'
 	when
 		// get an institution in allocate phase
@@ -153,18 +196,40 @@ rule "Do allocation"
 		// get a pool from this institution
 		$pool : CommonPool( this memberOf $pools )
 		// get the head
-		$ag : Head( institutionId == $iid )
+		$hd : Head( institutionId == $iid )
 		// get demands for this pool
-		$demands : List( size > 0 ) from collect( Demand( pool == $pool.id ) )
+		$demands : List( size > 0 ) from collect( Demand( pool == $pool.id, round == $round ) )
 	then
-		logger.info( $ag );
+		logger.info( $hd );
 		logger.info( $demands );
-		Set<Allocation> allocations = $ag.allocate($inst, $pool, $demands);
+		Set<Allocation> allocations = $hd.allocate($inst, $pool, $demands);
 		logger.info(allocations);
 		for(Allocation a : allocations) {
 			insert(a);
 		}
 end
+
+/*
+rule "Do allocation - raMethod RATION"
+	ruleflow-group 'allocate'
+	when
+		// get an institution in allocate phase
+		$inst : Institution( $iid : id, $round : round, $pools : pools )
+		// get a pool from this institution
+		$pool : CommonPool( this memberOf $pools )
+		// get the head
+		$hd : Head( institutionId == $iid )
+		// get demands for this pool
+		$demands : List( size > 0 ) from collect( Demand( pool == $pool.id, round == $round ) )
+	then
+		logger.info( $hd );
+		logger.info( $demands );
+		Set<Allocation> allocations = $hd.allocate($inst, $pool, $demands);
+		logger.info(allocations);
+		for(Allocation a : allocations) {
+			insert(a);
+		}
+end */
 
 rule "Member appropriation - no allocation"
 	salience 1000
@@ -193,15 +258,14 @@ rule "Member appropriation - allocated"
 	ruleflow-group "appropriate"
 	no-loop
 	when
-		$t : IntegerTime( )
 		$member : Member( $iid : institutionId, $pid : pool )
 		$i : Institution( id == $iid, $round : round )
 		$pool : CommonPool( id == $pid )
-		not Appropriated( round == $t.intValue(), agent == $member.getName() )
+		not Appropriated( round == $round, agent == $member.getName() )
 		$all : Allocation( round == $round, agent == $member.getName() )
 	then
 		double appropriatedAmount = $member.appropriate( $i, $pool, $all );
-		Appropriated app = new Appropriated( $member.getName(), $t.intValue(), appropriatedAmount );
+		Appropriated app = new Appropriated( $member.getName(), $round, appropriatedAmount );
 		insert( app );
 		modify($pool) {
 			setResourceLevel( $pool.getResourceLevel() - appropriatedAmount )

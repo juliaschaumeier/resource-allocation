@@ -12,13 +12,15 @@ public class Member extends Agent {
 
 	int institutionId;
 	final double preferredRequest;
+	final double noRequestPercentage;
 
-	public Member(String name, double compliancyDegree, double standardRequest,
+	public Member(String name, double compliancyDegree, double standardRequest, double noRequestPercentage,
 			int pool, int iid) {
 		super(name, pool, compliancyDegree, standardRequest);
 		// oscillate with an amplitude of 0.1
 		this.preferredRequest = standardRequest * compliancyDegree
 				* (1 + (0.2 * Random.randomDouble() - 0.1));
+		this.noRequestPercentage = noRequestPercentage;
 		this.institutionId = iid;
 	}
 
@@ -31,6 +33,7 @@ public class Member extends Agent {
 		super(m);
 		this.institutionId = m.institutionId;
 		this.preferredRequest = m.preferredRequest;
+		this.noRequestPercentage = m.noRequestPercentage;
 	}
 
 	/**
@@ -39,11 +42,12 @@ public class Member extends Agent {
 	 * @param nm
 	 * @param iid
 	 */
-	public Member(NonMember nm, int iid) {
+	public Member(NonMember nm, int iid, double noRequestPercentage) {
 		super(nm);
 		this.preferredRequest = standardRequest * compliancyDegree
 				* (1 + (0.2 * Random.randomDouble() - 0.1));
 		this.institutionId = iid;
+		this.noRequestPercentage = noRequestPercentage;
 	}
 
 	/**
@@ -76,7 +80,7 @@ public class Member extends Agent {
 		}
 		return 0;
 	}
-
+	
 	public Vote vote(Institution i, CommonPool pool, String ballot) {
 		if (ballot.equals("raMethod") && i.isVoteRaMethod()) {
 			RaMethod vote;
@@ -91,11 +95,24 @@ public class Member extends Agent {
 		return null;
 	}
 
-	public double demand(Institution i, CommonPool pool) {// doesn't happen
-															// every round!!
-		if (active && i.isPrinciple2()) {
-			return preferredRequest;
+	public double demand(Institution i, CommonPool pool) {
+		//agents do not demand in every round
+		if (active && i.isPrinciple2() && Random.randomDouble() > noRequestPercentage) {
+			if( i.getAllocationMethod() == RaMethod.QUEUE){
+				return preferredRequest;
+			}
+			if(i.getAllocationMethod() == RaMethod.RATION){
+				/*if(count members....){
+					if/else
+				}
+				else {
+					return preferredRequest;
+				}*/
+				
+			}
 		}
+		
+		
 		return 0;
 	}
 

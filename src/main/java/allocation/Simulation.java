@@ -42,7 +42,6 @@ public class Simulation extends InjectedSimulation {
 	@Parameter(name = "numCheat", optional = true)
 	public int numCheat = 50;
 
-	// julia
 	@Parameter(name = "outAgents", optional = true)
 	public int outAgents = 20;
 	@Parameter(name = "outNumCheat", optional = true)
@@ -55,8 +54,11 @@ public class Simulation extends InjectedSimulation {
 	public double greedMax = 0.2;
 	@Parameter(name = "altrMax", optional = true)
 	public double altrMax = 0.0;
+	
+	//percentage of agents that doesn't place a request (per timeslice)
+	@Parameter(name = "noRequestPercentage", optional = true)
+	public double noRequestPercentage = 0.1;
 
-	// julia
 	@Parameter(name = "monitoringLevel", optional = true)
 	public double monitoringLevel = 0.1;
 	@Parameter(name = "monitoringCost", optional = true)

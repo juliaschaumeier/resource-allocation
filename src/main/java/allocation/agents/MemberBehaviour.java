@@ -1,3 +1,4 @@
+//whole package not used anymore
 package allocation.agents;
 
 import allocation.actions.Appropriate;

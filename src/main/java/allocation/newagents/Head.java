@@ -19,9 +19,9 @@ public class Head extends Member {
 	int monitoring = 0;
 	int outMonitoring = 0;
 
-	public Head(String name, double compliancyDegree, double standardRequest,
+	public Head(String name, double compliancyDegree, double standardRequest, double noRequestPercentage,
 			int pool, int iid) {
-		super(name, compliancyDegree, standardRequest, pool, iid);
+		super(name, compliancyDegree, standardRequest, noRequestPercentage, pool, iid);
 	}
 
 	/**
@@ -35,7 +35,7 @@ public class Head extends Member {
 
 	public CallForVote callForVotes(Institution i) {
 		if (i.isPrinciple3()) {
-			// vote ra method
+			// vote on ra method, not head
 			return new CallForVote(false, true);
 		} else {
 			return null;

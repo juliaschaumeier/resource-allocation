@@ -2,14 +2,14 @@ package allocation.facts;
 
 import java.util.Map;
 
-public class Declared {
+public class VoteCount {
 
 	public final int institution;
 	public final String ballot;
 	public final int round;
 	public final Map<Integer, Integer> result;
 
-	public Declared(int institution, String ballot, int round, Map<Integer, Integer> result) {
+	public VoteCount(int institution, String ballot, int round, Map<Integer, Integer> result) {
 		super();
 		this.institution = institution;
 		this.ballot = ballot;

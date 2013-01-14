@@ -1,3 +1,4 @@
+//whole package not used anymore
 package allocation.agents;
 
 import uk.ac.imperial.presage2.core.util.random.Random;

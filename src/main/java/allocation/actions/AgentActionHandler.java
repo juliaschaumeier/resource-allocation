@@ -1,3 +1,4 @@
+//not used anymore
 package allocation.actions;
 
 import java.util.Collection;
@@ -60,7 +61,8 @@ public class AgentActionHandler implements ActionHandler {
 		}
 		return pool;
 	}
-
+	
+	//what if there are no more agents in the game??
 	private synchronized Agent getPlayer(final UUID id) {
 		if (!players.containsKey(id)) {
 			Collection<Object> rawPlayers = session

@@ -1,18 +1,15 @@
 package allocation.facts;
 
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.Set;
 
-import org.drools.runtime.ObjectFilter;
 import org.drools.runtime.StatefulKnowledgeSession;
 
 import allocation.Phase;
 import allocation.actions.Demand;
 import allocation.agents.Agent;
-import allocation.agents.Role;
 
 public class Institution implements VisibilityHeadInstitution {
 
@@ -30,18 +27,19 @@ public class Institution implements VisibilityHeadInstitution {
 	boolean principle6 = false;
 
 	final int initialAgents;
-	boolean voteHead = false;
+	boolean voteHead = false; //head decides every timestep in CFV what to vote for
 	boolean voteRaMethod = false;
+	int memberCount = 0;
 
 	RaMethod allocationMethod = RaMethod.QUEUE;
-	double monitoringLevel = 0.5;// julia: who sees it?? Head only?
-	double monitoringCost = 5;// julia
+	double monitoringLevel = 0.5;
+	double monitoringCost = 5;
 	double outMonitoringLevel = 0.5;
 	double outMonitoringCost = 5;
 	
 	Set<CommonPool> pools = new HashSet<CommonPool>();
 
-	Queue<Demand> demandQueue = new LinkedList<Demand>();
+	public Queue<Demand> demandQueue = new LinkedList<Demand>();
 
 	public Institution(StatefulKnowledgeSession session, int id,
 			int initialAgents, boolean principle2, boolean principle3,
@@ -145,19 +143,19 @@ public class Institution implements VisibilityHeadInstitution {
 		this.allocationMethod = allocationMethod;
 	}
 
-	public double getMonitoringLevel() {// julia
+	public double getMonitoringLevel() {
 		return monitoringLevel;
 	}
 
-	public double getMonitoringCost() {// julia
+	public double getMonitoringCost() {
 		return monitoringCost;
 	}
 	
-	public double getOutMonitoringLevel() {// julia
+	public double getOutMonitoringLevel() {
 		return outMonitoringLevel;
 	}
 
-	public double getOutMonitoringCost() {// julia
+	public double getOutMonitoringCost() {
 		return outMonitoringCost;
 	}
 
@@ -172,41 +170,18 @@ public class Institution implements VisibilityHeadInstitution {
 		return demandQueue;
 	}
 
+	public int getMemberCount() {
+		return memberCount;
+	}
+
+	public void setMemberCount(int memberCount) {
+		this.memberCount = memberCount;
+	}
+
 	@Override
 	public Set<Agent> getMembers() {
-		Set<Agent> members = new HashSet<Agent>();
-		Collection<Object> memberObj = session.getObjects(new ObjectFilter() {
-			@Override
-			public boolean accept(Object object) {
-				if (object instanceof Agent) {
-					Agent ag = (Agent) object;
-					return ag.getInstitutionId() == getId()
-							&& ag.getRole() != Role.NONMEMBER;
-				}
-				return false;
-			}
-		});
-		for (Object o : memberObj) {
-			members.add((Agent) o);
-		}
-		return members;
+		// TODO Auto-generated method stub
+		return null;
 	}
-	
-	public Set<Agent> getNonmembers() {//julia: can be simpler?!
-		Set<Agent> nonmembers = new HashSet<Agent>();
-		Collection<Object> nonmemberObj = session.getObjects(new ObjectFilter() {
-			@Override
-			public boolean accept(Object object) {
-				if (object instanceof Agent) {
-					Agent ag = (Agent) object;
-					return ag.getRole() != Role.MEMBER;
-				}
-				return false;
-			}
-		});
-		for (Object o : nonmemberObj) {
-			nonmembers.add((Agent) o);
-		}
-		return nonmembers;
-	}
+
 }
