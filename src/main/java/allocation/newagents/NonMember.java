@@ -1,9 +1,7 @@
 package allocation.newagents;
 
 import uk.ac.imperial.presage2.core.util.random.Random;
-import allocation.actions.Appropriate;
 import allocation.facts.CommonPool;
-import allocation.facts.Institution;
 
 public class NonMember extends Agent {
 

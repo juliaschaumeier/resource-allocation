@@ -9,9 +9,8 @@ import org.drools.runtime.StatefulKnowledgeSession;
 
 import allocation.Phase;
 import allocation.actions.Demand;
-import allocation.agents.Agent;
 
-public class Institution implements VisibilityHeadInstitution {
+public class Institution {
 
 	final StatefulKnowledgeSession session;
 
@@ -165,7 +164,6 @@ public class Institution implements VisibilityHeadInstitution {
 				+ round + ", allocationMethod=" + allocationMethod + "]";
 	}
 
-	@Override
 	public Queue<Demand> getDemandQueue() {
 		return demandQueue;
 	}
@@ -176,12 +174,6 @@ public class Institution implements VisibilityHeadInstitution {
 
 	public void setMemberCount(int memberCount) {
 		this.memberCount = memberCount;
-	}
-
-	@Override
-	public Set<Agent> getMembers() {
-		// TODO Auto-generated method stub
-		return null;
 	}
 
 }

@@ -167,7 +167,7 @@ rule "Reset demand-queue if necessary"
 	ruleflow-group 'vote'
 	when 
 		$i : Institution( $iid : id , $r : round )
-		Declared(institution == $iid, ballot == "raMethod",  result == RaMethod.RATION.ordinal(), round == $r ) //how to make sure we're in the current round??
+		Declared(institution == $iid, ballot == "raMethod",  result == RaMethod.RATION.ordinal(), round == $r )
 		Declared(institution == $iid, ballot == "raMethod", result == RaMethod.QUEUE.ordinal(), $rb : round, $rb < $r)
 		not Declared(institution == $iid, ballot == "raMethod", result == RaMethod.RATION.ordinal(), round > $rb)
 	then
@@ -182,7 +182,7 @@ rule "Member Demands"
 		$inst : Institution( $iid : id, $round : round, $pools : pools, principle2 == true )
 		$pool : CommonPool( this memberOf $pools )
 		$member : Member( institutionId == $iid )
-		//agent's demand not in queue:
+		//no agent allowed to demand twice:
 		not Demand( agent == $member.name, round < $round, this memberOf $inst.demandQueue )
 	then
 		insert( new Demand( $round, $pool.getId(), $member.getName(), $member.demand( $inst, $pool ) ) );
@@ -293,7 +293,7 @@ rule "Monitor agents"
 		insert( new TaskExecuted( $i, "monitor", $round ) );
 end
 
-rule "Deduct member monitoring cost" //julia: happens after appropriation!! 
+rule "Deduct member monitoring cost" // happens after appropriation
 	ruleflow-group "appropriate"
 	no-loop
 	when
@@ -309,7 +309,7 @@ rule "Deduct member monitoring cost" //julia: happens after appropriation!!
 		insert( new Deducted( $m ) );
 end
 
-rule "Deduct nonmember monitoring cost" //julia: happens after appropriation!! 
+rule "Deduct nonmember monitoring cost" // happens after appropriation
 	ruleflow-group "appropriate"
 	no-loop
 	when

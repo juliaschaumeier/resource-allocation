@@ -2,7 +2,6 @@ package allocation.newagents;
 
 import uk.ac.imperial.presage2.core.util.random.Random;
 import allocation.actions.Allocation;
-import allocation.actions.Demand;
 import allocation.actions.Vote;
 import allocation.facts.CommonPool;
 import allocation.facts.Institution;
@@ -13,6 +12,8 @@ public class Member extends Agent {
 	int institutionId;
 	final double preferredRequest;
 	final double noRequestPercentage;
+	
+	double demand = 0;
 
 	public Member(String name, double compliancyDegree, double standardRequest, double noRequestPercentage,
 			int pool, int iid) {
@@ -65,20 +66,30 @@ public class Member extends Agent {
 		if (active) {
 			double appropriateAmount = 0;
 			if (i.isPrinciple2()) {
-				if (all == null) {
-					appropriateAmount = 0;
-				} else {
-					appropriateAmount = all.getQuantity();
+				double amount = (all == null ? 0 : all.getQuantity());
+				if (compliancyDegree > 1) {
+					//appropriate more than allowed (only top up, if allocated small)
+					if(amount + (preferredRequest-standardRequest) < demand){
+						appropriateAmount = amount + (preferredRequest-standardRequest);
+					}
+					else appropriateAmount = demand;
 				}
-			} else {
+				else{
+					//appropriate allocation
+					appropriateAmount = amount;
+				}
+			} else if (Random.randomDouble() > noRequestPercentage) {
 				// principle 2 disabled: use preferredRequest
 				appropriateAmount = preferredRequest;
 			}
 
-			// do appropriation action
+			// do appropriation action (if noise, shake up here)
 			return appropriateAmount;
 		}
-		return 0;
+		//inactive agents not subjective to noise
+		else {
+			return 0;
+		}
 	}
 	
 	public Vote vote(Institution i, CommonPool pool, String ballot) {
@@ -99,6 +110,7 @@ public class Member extends Agent {
 		//agents do not demand in every round
 		if (active && i.isPrinciple2() && Random.randomDouble() > noRequestPercentage) {
 			if( i.getAllocationMethod() == RaMethod.QUEUE){
+				demand = preferredRequest;
 				return preferredRequest;
 			}
 			if(i.getAllocationMethod() == RaMethod.RATION){
@@ -112,7 +124,7 @@ public class Member extends Agent {
 			}
 		}
 		
-		
+		demand = 0;
 		return 0;
 	}
 

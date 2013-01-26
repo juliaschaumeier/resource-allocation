@@ -1,6 +1,6 @@
 package allocation.actions;
 
-public class CallForVote extends PlayerAction {
+public class CallForVote {
 
 	final boolean head;
 	final boolean raMethod;

@@ -1,7 +1,5 @@
 package allocation.actions;
 
-import allocation.agents.Agent;
-
 public class Allocation {
 
 	final int round;

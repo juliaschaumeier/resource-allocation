@@ -18,13 +18,6 @@ import uk.ac.imperial.presage2.core.simulator.EndOfTimeCycle;
 import uk.ac.imperial.presage2.core.simulator.InjectedSimulation;
 import uk.ac.imperial.presage2.core.simulator.Parameter;
 import uk.ac.imperial.presage2.core.simulator.Scenario;
-import uk.ac.imperial.presage2.core.util.random.Random;
-import uk.ac.imperial.presage2.util.environment.AbstractEnvironmentModule;
-import uk.ac.imperial.presage2.util.network.NetworkModule;
-import allocation.actions.AgentActionHandler;
-import allocation.agents.Agent;
-import allocation.agents.Role;
-import allocation.facts.CommonPool;
 import allocation.facts.Institution;
 
 import com.google.inject.AbstractModule;
@@ -55,7 +48,7 @@ public class Simulation extends InjectedSimulation {
 	@Parameter(name = "altrMax", optional = true)
 	public double altrMax = 0.0;
 	
-	//percentage of agents that doesn't place a request (per timeslice)
+	//percentage of agents that doesn't place a request or appropriate (per timeslice)
 	@Parameter(name = "noRequestPercentage", optional = true)
 	public double noRequestPercentage = 0.1;
 
@@ -116,63 +109,6 @@ public class Simulation extends InjectedSimulation {
 
 	@Override
 	protected void addToScenario(Scenario s) {
-
-		session.setGlobal("logger", logger);
-
-		// create a single common pool
-		double initialLevel = 2 * standardRequest * agents;
-		CommonPool pool0 = new CommonPool(0, initialLevel, initialLevel);
-
-		// create a single institution governing the pool.
-		Institution i0 = new Institution(session, 0, agents, principle2,
-				principle3, principle4, principle5, principle6);
-		i0.addPool(pool0);
-		institutions.add(i0);
-
-		// insert pool and institution into drools session.
-		session.insert(pool0);
-		session.insert(i0);
-		session.insert(t);
-
-		// create member agents
-		for (int i = 0; i < agents; i++) {
-			Agent a;
-			Role role = Role.MEMBER;
-			// set the first agent to be the head initially.
-			if (i == 0)
-				role = Role.HEAD;
-
-			if (i < numCheat) {
-				// cheating member
-				a = new Agent("elf " + i, 1 + greedMax * Random.randomDouble(),
-						standardRequest, 0, 0, role);
-			} else {
-				// good member
-				a = new Agent("elf " + i, 1 - altrMax * Random.randomDouble(),
-						standardRequest, 0, 0, role);
-			}
-			//s.addParticipant(a);
-			session.insert(a);
-
-		}
-
-		// create agents outside the institution
-		for (int i = 0; i < outAgents; i++) {// julia
-			Agent a;
-			Role role = Role.NONMEMBER;
-			if (i < outNumCheat) {
-				// cheating agent
-				a = new Agent("outelf " + i, 1 + greedMax
-						* Random.randomDouble(), standardRequest, 0, 0, role);
-			} else {
-				// good agent
-				a = new Agent("outelf " + i, 1 - altrMax
-						* Random.randomDouble(), standardRequest, 0, 0, role);
-			}
-			//s.addParticipant(a);
-			session.insert(a);
-
-		}
 
 	}
 
