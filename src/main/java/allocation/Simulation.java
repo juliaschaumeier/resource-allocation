@@ -12,6 +12,8 @@ import org.drools.runtime.StatefulKnowledgeSession;
 
 import uk.ac.imperial.presage2.core.IntegerTime;
 import uk.ac.imperial.presage2.core.Time;
+import uk.ac.imperial.presage2.core.db.DatabaseService;
+import uk.ac.imperial.presage2.core.db.StorageService;
 import uk.ac.imperial.presage2.core.event.EventBus;
 import uk.ac.imperial.presage2.core.event.EventListener;
 import uk.ac.imperial.presage2.core.simulator.EndOfTimeCycle;
@@ -47,10 +49,16 @@ public class Simulation extends InjectedSimulation {
 	public double greedMax = 0.2;
 	@Parameter(name = "altrMax", optional = true)
 	public double altrMax = 0.0;
-	
-	//percentage of agents that doesn't place a request or appropriate (per timeslice)
+
+	// percentage of agents that doesn't place a request or appropriate (per
+	// timeslice)
 	@Parameter(name = "noRequestPercentage", optional = true)
 	public double noRequestPercentage = 0.1;
+	@Parameter(name = "changeBehaviourPercentage", optional = true)
+	public double changeBehaviourPercentage = 0.3;
+	@Parameter(name = "improveBehaviour", optional = true)
+	public double improveBehaviour = 0.5; // how much behaviour improves wrt
+											// compliancyDegree
 
 	@Parameter(name = "monitoringLevel", optional = true)
 	public double monitoringLevel = 0.1;
@@ -64,6 +72,8 @@ public class Simulation extends InjectedSimulation {
 	public double outAppropriationFrequency = 0.1;
 	@Parameter(name = "outImproveFrequency", optional = true)
 	public double outImproveFrequency = 0.1;
+	@Parameter(name = "appealtime", optional = true)
+	public int appealtime = 30;
 
 	@Parameter(name = "principle2", optional = true)
 	public boolean principle2 = true;
@@ -75,6 +85,13 @@ public class Simulation extends InjectedSimulation {
 	public boolean principle5 = true;
 	@Parameter(name = "principle6", optional = true)
 	public boolean principle6 = true;
+
+	@Parameter(name = "unintentionalError", optional = true)
+	public boolean unintentionalError = false;
+	@Parameter(name = "noisePercentage", optional = true)
+	public double noisePercentage = 0.05; // how many suffer from noise
+	@Parameter(name = "noiseLevel", optional = true)
+	public double noiseLevel = 0.1; // noise impact
 
 	Set<Institution> institutions = new HashSet<Institution>();
 
@@ -96,13 +113,15 @@ public class Simulation extends InjectedSimulation {
 	protected Set<AbstractModule> getModules() {
 		Set<AbstractModule> modules = new HashSet<AbstractModule>();
 
-		/*modules.add(new AbstractEnvironmentModule()
-				.addActionHandler(AgentActionHandler.class)
-				.addParticipantGlobalEnvironmentService(PoolService.class)
-				.setStorage(RuleStorage.class));
-		modules.add(new RuleModule().addClasspathDrlFile("environment.drl")
-				.addClasspathDrlFile("institution.drl"));
-		modules.add(NetworkModule.noNetworkModule());*/
+		/*
+		 * modules.add(new AbstractEnvironmentModule()
+		 * .addActionHandler(AgentActionHandler.class)
+		 * .addParticipantGlobalEnvironmentService(PoolService.class)
+		 * .setStorage(RuleStorage.class)); modules.add(new
+		 * RuleModule().addClasspathDrlFile("environment.drl")
+		 * .addClasspathDrlFile("institution.drl"));
+		 * modules.add(NetworkModule.noNetworkModule());
+		 */
 
 		return modules;
 	}
@@ -142,6 +161,18 @@ public class Simulation extends InjectedSimulation {
 			session.update(session.getFactHandle(i), i);
 			logger.info(i);
 		}
+	}
+
+	public StorageService getStorage() {
+		return this.storage;
+	}
+
+	public DatabaseService getDatabase() {
+		return this.database;
+	}
+	
+	public void initDatabase() {
+		super.initDatabase();
 	}
 
 }

@@ -19,7 +19,7 @@ public class VoteCount {
 
 	@Override
 	public String toString() {
-		return "Declared [institution=" + institution + ", ballot=" + ballot
+		return "VoteCount [institution=" + institution + ", ballot=" + ballot
 				+ ", round=" + round + ", result=" + result + "]";
 	}
 

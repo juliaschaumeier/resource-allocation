@@ -19,6 +19,9 @@ import org.drools.runtime.StatefulKnowledgeSession;
 
 import uk.ac.imperial.presage2.core.IntegerTime;
 import uk.ac.imperial.presage2.core.Time;
+import uk.ac.imperial.presage2.core.db.DatabaseModule;
+import uk.ac.imperial.presage2.core.db.DatabaseService;
+import uk.ac.imperial.presage2.core.db.StorageService;
 import uk.ac.imperial.presage2.core.simulator.RunnableSimulation;
 import uk.ac.imperial.presage2.core.util.random.Random;
 import allocation.facts.CommonPool;
@@ -28,6 +31,8 @@ import allocation.newagents.Member;
 import allocation.newagents.NonMember;
 
 import com.google.inject.AbstractModule;
+import com.google.inject.Guice;
+import com.google.inject.Injector;
 
 public class DroolsSimulation {
 
@@ -44,10 +49,13 @@ public class DroolsSimulation {
 		}
 		System.out.println();
 
+		HashSet<AbstractModule> modules = new HashSet<AbstractModule>();
+		modules.add(DatabaseModule.load());
+		
 		Simulation sim = (Simulation) RunnableSimulation.newFromClassName(
-				Simulation.class.getCanonicalName(),
-				new HashSet<AbstractModule>());
+				Simulation.class.getCanonicalName(), modules);
 		sim.parseParameters(args);
+		sim.initDatabase();
 
 		// drools initialisation
 		String[] ruleSets = { "environment.drl", "institution.drl" };
@@ -92,17 +100,18 @@ public class DroolsSimulation {
 
 		// session globals
 		session.setGlobal("logger", logger);
+		session.setGlobal("storage", sim.getStorage());
 
 		Time t = new IntegerTime();
 		// create a single common pool
 		double initialLevel = 2 * sim.standardRequest * sim.agents;
-		CommonPool pool0 = new CommonPool(0, initialLevel, initialLevel);
+		CommonPool pool0 = new CommonPool(0, initialLevel, initialLevel, sim.outAppropriationFrequency, sim.outImproveFrequency);
 
 		// create a single institution governing the pool.
-		Institution i0 = new Institution(session, 0, sim.agents,
+		Institution i0 = new Institution(session, 0, sim.agents, pool0,
 				sim.principle2, sim.principle3, sim.principle4, sim.principle5,
-				sim.principle6);
-		i0.addPool(pool0);
+				sim.principle6, sim.unintentionalError, sim.monitoringLevel, sim.monitoringCost, sim.outMonitoringLevel, 
+				sim.outMonitoringCost, sim.appealtime);
 
 		// insert pool and institution into drools session.
 		session.insert(pool0);
@@ -112,33 +121,35 @@ public class DroolsSimulation {
 		// create member agents
 		for (int i = 0; i < sim.agents; i++) {
 			Member a;
+			double comp;//for (initial)compiancyDegree
 			// set the first agent to be the head initially.
 			if (i == 0) {
-				a = new Head("elf " + i, 1 + sim.greedMax
-						* Random.randomDouble(), sim.standardRequest,
-						sim.noRequestPercentage, 0, 0);
+				comp = 1 + sim.greedMax* Random.randomDouble();
+				a = new Head("elf " + i, comp, comp, sim.standardRequest,
+						sim.noRequestPercentage, sim.changeBehaviourPercentage, sim.improveBehaviour, 0, 0);
 			} else if (i < sim.numCheat) {
 				// cheating member
-				a = new Member("elf " + i, 1 + sim.greedMax
-						* Random.randomDouble(), sim.standardRequest,
-						sim.noRequestPercentage, 0, 0);
+				comp = 1 + sim.greedMax* Random.randomDouble();
+				a = new Member("elf " + i, comp, comp, sim.standardRequest,
+						sim.noRequestPercentage, sim.changeBehaviourPercentage, sim.improveBehaviour, 0, 0);
 			} else {
 				// good member
-				a = new Member("elf " + i, 1 - sim.altrMax
-						* Random.randomDouble(), sim.standardRequest,
-						sim.noRequestPercentage, 0, 0);
+				comp =  1 - sim.altrMax* Random.randomDouble();
+				a = new Member("elf " + i, comp, comp, sim.standardRequest,
+						sim.noRequestPercentage, sim.changeBehaviourPercentage, sim.improveBehaviour, 0, 0);
 			}
 			session.insert(a);
 		}
 		// create non member agents
 		for (int i = 0; i < sim.outAgents; i++) {
 			NonMember a;
+			double comp;
 			if (i < sim.outNumCheat) {
-				a = new NonMember("outelf " + i, 1 + sim.greedMax
-						* Random.randomDouble(), sim.standardRequest, 0, 0.1);
+				comp = 1 + sim.greedMax* Random.randomDouble();
+				a = new NonMember("outelf " + i, comp, comp, sim.standardRequest, 0);
 			} else {
-				a = new NonMember("outelf " + i, 1 + sim.altrMax
-						* Random.randomDouble(), sim.standardRequest, 0, 0.1);
+				comp = 1 + sim.altrMax* Random.randomDouble();
+				a = new NonMember("outelf " + i, comp, comp, sim.standardRequest, 0);
 			}
 			session.insert(a);
 		}
@@ -157,5 +168,6 @@ public class DroolsSimulation {
 		}
 
 		logger.info("Finished!");
+		sim.getDatabase().stop();
 	}
 }

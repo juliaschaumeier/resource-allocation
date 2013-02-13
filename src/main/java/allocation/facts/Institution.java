@@ -1,9 +1,7 @@
 package allocation.facts;
 
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Queue;
-import java.util.Set;
 
 import org.drools.runtime.StatefulKnowledgeSession;
 
@@ -24,54 +22,60 @@ public class Institution {
 	boolean principle4 = false;
 	boolean principle5 = false;
 	boolean principle6 = false;
+	boolean unintentionalError = false;
 
 	final int initialAgents;
 	boolean voteHead = false; //head decides every timestep in CFV what to vote for
 	boolean voteRaMethod = false;
 	int memberCount = 0;
+	int activeMemberCount = 0;
+	int samplingrate = 50; //external agent decides every x timesteps about RaMethod
 
 	RaMethod allocationMethod = RaMethod.QUEUE;
-	double monitoringLevel = 0.5;
-	double monitoringCost = 5;
-	double outMonitoringLevel = 0.5;
-	double outMonitoringCost = 5;
+	final double monitoringLevel;
+	final double monitoringCost;
+	final double outMonitoringLevel;
+	final double outMonitoringCost;
 	
-	Set<CommonPool> pools = new HashSet<CommonPool>();
+	double fairshare = 50; //if RaMethod=RATION; set in head.allocate()	
+	final int appealtime; //how long no offence to be let off
+	int maxSanctionLevel = 3; //for graduated sanctions
+	int excludetime = 5;//multiplied with sanction level
+	
+	//institution should always have a head, if left choose one at random!!
+
+	final CommonPool pool;
 
 	public Queue<Demand> demandQueue = new LinkedList<Demand>();
 
 	public Institution(StatefulKnowledgeSession session, int id,
-			int initialAgents, boolean principle2, boolean principle3,
-			boolean principle4, boolean principle5, boolean principle6) {
+			int initialAgents, CommonPool pool, boolean principle2, boolean principle3,
+			boolean principle4, boolean principle5, boolean principle6, boolean unintentionalError, double monitoringLevel, double monitoringCost, 
+			double outMonitoringLevel, double outMonitoringCost, int appealtime) {
 		super();
 		this.session = session;
 		this.id = id;
+		this.pool = pool;
 		this.principle2 = principle2;
-		this.principle3 = principle3;
+		this.principle3 = principle3;//voting
 		this.principle4 = principle4;
 		this.principle5 = principle5;
 		this.principle6 = principle6;
+		this.unintentionalError = unintentionalError;
 		this.initialAgents = initialAgents;
-	}
-
-	public void addPool(CommonPool p) {
-		pools.add(p);
+		this.monitoringLevel = monitoringLevel;
+		this.monitoringCost = monitoringCost;
+		this.outMonitoringLevel = outMonitoringLevel;
+		this.outMonitoringCost = outMonitoringCost;
+		this.appealtime = appealtime;
 	}
 
 	public int getId() {
 		return id;
 	}
 
-	public CommonPool getPool(int id) {
-		for (CommonPool p : pools) {
-			if (p.getId() == id)
-				return p;
-		}
-		return null;
-	}
-
-	public Set<CommonPool> getPools() {
-		return pools;
+	public CommonPool getPool() {
+		return pool;
 	}
 
 	public boolean isPrinciple1() {
@@ -96,6 +100,10 @@ public class Institution {
 
 	public boolean isPrinciple6() {
 		return principle6;
+	}
+	
+	public boolean isUnintentionalError(){
+		return unintentionalError;
 	}
 
 	public Phase getState() {
@@ -142,20 +150,20 @@ public class Institution {
 		this.allocationMethod = allocationMethod;
 	}
 
-	public double getMonitoringLevel() {
-		return monitoringLevel;
+	public double getFairshare() {
+		return fairshare;
 	}
 
-	public double getMonitoringCost() {
-		return monitoringCost;
-	}
-	
-	public double getOutMonitoringLevel() {
-		return outMonitoringLevel;
+	public void setFairshare(double fairshare) {
+		this.fairshare = fairshare;
 	}
 
-	public double getOutMonitoringCost() {
-		return outMonitoringCost;
+	public int getMaxSanctionLevel() {
+		return maxSanctionLevel;
+	}
+
+	public int getExcludetime() {
+		return excludetime;
 	}
 
 	@Override
@@ -167,7 +175,7 @@ public class Institution {
 	public Queue<Demand> getDemandQueue() {
 		return demandQueue;
 	}
-
+	
 	public int getMemberCount() {
 		return memberCount;
 	}
@@ -175,5 +183,36 @@ public class Institution {
 	public void setMemberCount(int memberCount) {
 		this.memberCount = memberCount;
 	}
+	
+	public int getActiveMemberCount() {
+		return activeMemberCount;
+	}
 
+	public void setActiveMemberCount(int activeMemberCount) {
+		this.activeMemberCount = activeMemberCount;
+	}
+
+	public int getSamplingrate() {
+		return samplingrate;
+	}
+
+	public double getMonitoringLevel() {
+		return monitoringLevel;
+	}
+
+	public double getMonitoringCost() {
+		return monitoringCost;
+	}
+
+	public double getOutMonitoringLevel() {
+		return outMonitoringLevel;
+	}
+
+	public double getOutMonitoringCost() {
+		return outMonitoringCost;
+	}
+
+	public int getAppealtime() {
+		return appealtime;
+	}
 }

@@ -27,8 +27,7 @@ public class Allocation {
 
 	@Override
 	public String toString() {
-		return "Allocation [quantity=" + quantity + ", agent=" + agent
-				+ ", round=" + round + "]";
+		return "Allocation [" + agent +", " + String.format("%.2f", quantity) + ", rd=" + round + "]";
 	}
 
 }

@@ -5,6 +5,7 @@ import allocation.facts.*
 import allocation.actions.*
 import allocation.newagents.*
 import uk.ac.imperial.presage2.core.IntegerTime
+import uk.ac.imperial.presage2.core.util.random.Random
 import java.util.HashMap
 import java.util.List
 import java.util.Set
@@ -33,6 +34,23 @@ declare Deducted
 	monitor : Monitored
 end
 
+declare Sanctioned
+	agent: String //name
+	round: int
+	level: int
+end
+
+declare Appealed
+	agent: String //name
+	round: int
+end
+
+declare ExcludeHead
+	institution : int
+	round : int
+end
+	
+
 //sets IntegerTime and round number to be the same
 rule "Increment round" 
 	ruleflow-group 'init'
@@ -56,10 +74,23 @@ rule "Count members"
 		}
 end
 
+rule "Count active members"
+	ruleflow-group 'init'
+	when
+		$i : Institution( $iid : id, $count : activeMemberCount )
+		List( size != $count, $members : size ) from collect( Member( institutionId == $iid, active == true ) )
+	then
+		modify($i) {
+			setActiveMemberCount( $members );
+		}
+end
+
 rule "Disable votes" //head renews it every timestep in CFV
 	ruleflow-group 'init'
 	when 
 		$inst : Institution( voteHead || voteRaMethod )
+		//only for institutions with Pr3=true?? :
+		//$inst : Institution(( voteHead || voteRaMethod ), principle3 == true )
 	then
 		modify($inst) {
 			setVoteHead( false ),
@@ -71,9 +102,9 @@ rule "Call for votes"
 	ruleflow-group 'cfv'
 	no-loop
 	when
-		IntegerTime()
+		IntegerTime()//what's that for??
 		$head : Head( $iid : institutionId )
-		$i : Institution( id == $iid )
+		$i : Institution( id == $iid, principle3 == true)
 	then
 		CallForVote cfv = $head.callForVotes( $i );
 		if(cfv != null) {
@@ -91,7 +122,7 @@ rule "Vote for RA method"
 	ruleflow-group 'vote'
 	when
 		$member : Member( $iid : institutionId, $pid : pool )
-		$i : Institution( id == $iid, voteRaMethod, $r : round )
+		$i : Institution( id == $iid, voteRaMethod, $r : round , principle3 == true)
 		$pool : CommonPool( id == $pid )
 	then
 		Vote v = $member.vote( $i, $pool, "raMethod" );
@@ -106,7 +137,7 @@ end
 rule "Count votes"
 	ruleflow-group 'vote'
 	when
-		Institution( $iid : id, $round : round )
+		Institution( $iid : id, $round : round, principle3 == true )
 		Vote( $ag : voter, round == $round, $b : ballot )
 		Member( name == $ag, institutionId == $iid )
 		not VoteCount( institution == $iid, ballot == $b, round == $round )
@@ -127,7 +158,7 @@ rule "Count votes"
 end
 
 
-rule "Echo Votes Counted"
+rule "Echo Votes Counted"//why not in 'count votes' after insert??
 	ruleflow-group 'vote'
 	when
 		$vc : VoteCount()
@@ -139,14 +170,14 @@ rule "Declare winner and update Ra method" //if votes equal, nothing happens;
 	ruleflow-group 'vote'
 	when
 		$vc : VoteCount( ballot == "raMethod", $iid : institution )
-		$i : Institution( id == $iid, round == $vc.round )
+		$i : Institution( id == $iid, round == $vc.round , principle3 == true )
 	then
 		Integer forQueue = $vc.result.get(RaMethod.QUEUE.ordinal());
 		Integer forRation = $vc.result.get(RaMethod.RATION.ordinal());
 		if(forQueue == null) forQueue = 0;
 		if(forRation == null) forRation = 0;
 
-		if(forQueue > forRation) {
+		if(forQueue > forRation) {//in C++ queue >= ration; here nothing changes if queue = ration
 			$i.setAllocationMethod( RaMethod.QUEUE );
 		} else if(forRation > forQueue) {
 			$i.setAllocationMethod( RaMethod.RATION );
@@ -155,7 +186,7 @@ rule "Declare winner and update Ra method" //if votes equal, nothing happens;
 		logger.info("Allocation method for institution "+ $iid +" set to "+ $i.getAllocationMethod()); 
 end
 
-rule "Echo Declared"
+rule "Echo Declared" //is that not there yet, after insert in 'declare winner...'??
 	ruleflow-group 'vote'
 	when
 		$d : Declared()
@@ -163,7 +194,22 @@ rule "Echo Declared"
 		logger.info( $d );
 end
 
-rule "Reset demand-queue if necessary"
+rule "External assignment of RaMethod"//NEW!!
+	ruleflow-group 'vote'
+	when
+		$i : Institution( $iid : id , $r : round, round % samplingrate == 0, $pool : pool, principle3 == false)
+		$hd : Head( institutionId == $iid )
+	then
+		if ($pool.getResourceLevel() < 1.5*$i.getInitialAgents()*$hd.getStandardRequest()){
+			$i.setAllocationMethod( RaMethod.RATION );
+		}
+		else
+			$i.setAllocationMethod( RaMethod.QUEUE );
+		insert(new Declared( $iid, "raMethod", $r, $i.getAllocationMethod().ordinal() ));//works immediately??
+		logger.info("Allocation method for institution "+ $iid +" externally set to "+ $i.getAllocationMethod());
+end
+
+rule "Reset demand-queue if necessary" //when switch from QUEUE to RATION
 	ruleflow-group 'vote'
 	when 
 		$i : Institution( $iid : id , $r : round )
@@ -179,8 +225,7 @@ rule "Member Demands"
 	salience 1000
 	ruleflow-group 'demand'
 	when
-		$inst : Institution( $iid : id, $round : round, $pools : pools, principle2 == true )
-		$pool : CommonPool( this memberOf $pools )
+		$inst : Institution( $iid : id, $round : round, $pool : pool, principle2 == true )
 		$member : Member( institutionId == $iid )
 		//no agent allowed to demand twice:
 		not Demand( agent == $member.name, round < $round, this memberOf $inst.demandQueue )
@@ -188,19 +233,37 @@ rule "Member Demands"
 		insert( new Demand( $round, $pool.getId(), $member.getName(), $member.demand( $inst, $pool ) ) );
 end
 
-rule "Do allocation - raMethod QUEUE"
+rule "Agent monitoring list" 
+	//independent of principle: collect all (non-)members
+	//must be known before allocation, only monitor 'active' -> head.monitor
+	//head.monitor writes those on list (=monitored string) who should be monitored
+	ruleflow-group "allocate" 
+	salience 1000
+	when
+		$i : Institution( $iid : id, $round : round, $pool : pool )
+		not TaskExecuted( $i, "monitor", $round ;)
+		$head : Head( institutionId == $iid, pool == $pool.id )
+		$members : Set( ) from collect( Member( institutionId == $iid) )
+		$nonMembers : Set( ) from collect( NonMember( pool == $pool.id) )//NonMember was Agent before!!
+	then
+		Set<String> monitored = $head.monitor( $i, $pool, $members, $nonMembers );
+		logger.info("Monitoring list: "+ monitored);
+		for( String agent : monitored ) {
+			insert( new Monitored( agent, $round ) );
+		}
+		insert( new TaskExecuted( $i, "monitor", $round ) );
+end
+
+rule "Perform resource allocation"
 	ruleflow-group 'allocate'
 	when
 		// get an institution in allocate phase
-		$inst : Institution( $iid : id, $round : round, $pools : pools )
-		// get a pool from this institution
-		$pool : CommonPool( this memberOf $pools )
+		$inst : Institution( $iid : id, $round : round, $pool : pool, principle2 == true )
 		// get the head
 		$hd : Head( institutionId == $iid )
 		// get demands for this pool
-		$demands : List( size > 0 ) from collect( Demand( pool == $pool.id, round == $round ) )
+		$demands : List( ) from collect( Demand( pool == $pool.id, round == $round ) )
 	then
-		logger.info( $hd );
 		logger.info( $demands );
 		Set<Allocation> allocations = $hd.allocate($inst, $pool, $demands);
 		logger.info(allocations);
@@ -208,28 +271,6 @@ rule "Do allocation - raMethod QUEUE"
 			insert(a);
 		}
 end
-
-/*
-rule "Do allocation - raMethod RATION"
-	ruleflow-group 'allocate'
-	when
-		// get an institution in allocate phase
-		$inst : Institution( $iid : id, $round : round, $pools : pools )
-		// get a pool from this institution
-		$pool : CommonPool( this memberOf $pools )
-		// get the head
-		$hd : Head( institutionId == $iid )
-		// get demands for this pool
-		$demands : List( size > 0 ) from collect( Demand( pool == $pool.id, round == $round ) )
-	then
-		logger.info( $hd );
-		logger.info( $demands );
-		Set<Allocation> allocations = $hd.allocate($inst, $pool, $demands);
-		logger.info(allocations);
-		for(Allocation a : allocations) {
-			insert(a);
-		}
-end */
 
 rule "Member appropriation - no allocation"
 	salience 1000
@@ -244,7 +285,7 @@ rule "Member appropriation - no allocation"
 		not Allocation( round == $round, agent == $member.getName() )
 	then
 		double appropriatedAmount = $member.appropriate( $i, $pool, null );
-		Appropriated app = new Appropriated( $member.getName(), $t.intValue(), appropriatedAmount );
+		Appropriated app = new Appropriated( $member.getName(), $t.intValue(), appropriatedAmount, $pool );
 		insert( app );
 		modify($pool) {
 			setResourceLevel( $pool.getResourceLevel() - appropriatedAmount )
@@ -265,37 +306,19 @@ rule "Member appropriation - allocated"
 		$all : Allocation( round == $round, agent == $member.getName() )
 	then
 		double appropriatedAmount = $member.appropriate( $i, $pool, $all );
-		Appropriated app = new Appropriated( $member.getName(), $round, appropriatedAmount );
+		Appropriated app = new Appropriated( $member.getName(), $round, appropriatedAmount, $pool );
 		insert( app );
 		modify($pool) {
 			setResourceLevel( $pool.getResourceLevel() - appropriatedAmount )
 		}
 		logger.info(app);
-		logger.info($pool);
+		//logger.info($pool);
 end
 
-rule "Monitor agents"
-	ruleflow-group "appropriate"
-	salience 1000
-	when
-		$i : Institution( $iid : id, $round : round )
-		not TaskExecuted( $i, "monitor", $round ;)
-		$head : Head( institutionId == $iid, $pid : pool )
-		$pool : CommonPool( id == $pid )
-		$members : Set( ) from collect( Member( institutionId == $iid ) )
-		$nonMembers : Set( ) from collect( Agent( pool == $pid ) )
-	then
-		Set<String> monitored = $head.monitor( $i, $pool, $members, $nonMembers );
-		logger.info(monitored);
-		for( String agent : monitored ) {
-			insert( new Monitored( agent, $round ) );
-		}
-		insert( new TaskExecuted( $i, "monitor", $round ) );
-end
+// rule "NonMember appropriation" in environment.drl
 
 rule "Deduct member monitoring cost" // happens after appropriation
 	ruleflow-group "appropriate"
-	no-loop
 	when
 		$i : Institution( $iid : id, $round : round )
 		$m : Monitored( $name : agent, round == $round )
@@ -309,14 +332,13 @@ rule "Deduct member monitoring cost" // happens after appropriation
 		insert( new Deducted( $m ) );
 end
 
-rule "Deduct nonmember monitoring cost" // happens after appropriation
+rule "Deduct nonMember monitoring cost" // happens after appropriation
 	ruleflow-group "appropriate"
-	no-loop
 	when
 		$pool : CommonPool( $pid : id )
-		$i : Institution( $round : round, pools contains $pool )
+		$i : Institution( $round : round, pool == $pool )
 		$m : Monitored( $name : agent, round == $round )
-		not Deducted( $m ;)
+		not Deducted( $m ;)// why ;??
 		NonMember( name == $name, pool == $pid )
 	then
 		modify( $pool ) {
@@ -325,18 +347,193 @@ rule "Deduct nonmember monitoring cost" // happens after appropriation
 		insert( new Deducted( $m ) );
 end
 
-/*rule "Sanction nonmembers and change appropriating frequency" //julia: check conditions
+rule "Sanctioning monitored members (first time or no graduated sanctions)" //not very important that it's the monitor/head
+	ruleflow-group "report"
+	no-loop 
 	when
-		$i : Institution( $iid : id, $round : round, state == Phase.Appropriate )
-		OutMonitor( $ag : outMonitored, round == $round )
-		Agent( this == $ag, institutionId == $iid)
-		$pool : CommonPool( id == $ag.getPool() )
-		//Allocation( player == $ag, round == $round, $quantity : quantity)
-		Appropriate(player == $ag, round == $round, pool == $pool, amount > 0)
-    then
-    	// $ag.active = false;
-    	/*modify($i){//non-member-wide variables (or these variables could be tied to an institution => describes how hard/easy it is to appropriate there)
-			setOutAppropriationFrequency($i.getOutAppropriationFrequency() *$i.outImproveFrequency)//appropriate less in future rounds
-		}*/
-//end
+		$pool : CommonPool($pid : id )
+		Institution($round : round, pool == $pool, $iid : id) //principle 4, graduation later.
+		Monitored( $name : agent, round == $round )
+		not Sanctioned( agent == $name, round == $round )
+		$member: Member( name == $name, institutionId == $iid, pool == $pid )
+		(	(Allocation(agent == $name, round == $round, $alloc : quantity) and //agent had been allocated
+			Appropriated(agent == $name, round == $round, $approp : quantity, pool == $pool, $approp > $alloc))
+		or
+			(not Allocation(agent == $name, round == $round) and //agent had not been allocated
+			Appropriated(agent == $name, round == $round, $approp : quantity, pool == $pool, $approp > 0))	)
+		not Sanctioned(agent == $name)
+	then 
+		Sanctioned san = new Sanctioned($name, $round, 1);
+		insert( san );
+		modify ( $member ){
+			setActive(false)
+		}
+		logger.info(san);
+end
 
+rule "Sanctioning monitored members (repeatedly)"
+	ruleflow-group "report"
+	no-loop 
+	when
+		$pool : CommonPool($pid : id )
+		Institution($round : round, pool == $pool, $iid : id, principle5 == true)
+		Monitored( $name : agent, round == $round )
+		not Sanctioned( agent == $name, round == $round )
+		$member: Member( name == $name, institutionId == $iid, pool == $pid )
+		(	(Allocation(agent == $name, round == $round, $alloc : quantity) and //agent had been allocated
+			Appropriated(agent == $name, round == $round, $approp : quantity, pool == $pool, $approp > $alloc))
+		or
+			(not Allocation(agent == $name, round == $round) and //agent had not been allocated
+			Appropriated(agent == $name, round == $round, $approp : quantity, pool == $pool, $approp > 0))	)
+		Sanctioned(agent == $name, $level : level) //highest level of sanctioning
+		not Sanctioned(agent == $name, $l : level, $l > $level)
+		
+	then 
+		Sanctioned san = new Sanctioned($name, $round, $level+1);
+		insert( san );
+		modify ( $member ){
+			setActive(false)
+		}
+		logger.info(san);
+end
+		
+rule "Sanction monitored nonmembers and change frequency of appropriation"
+	ruleflow-group "report"
+	no-loop //??
+	when
+		$pool : CommonPool($pid : id )
+		Institution($round : round, pool == $pool, principle1 == true)//if no institution attached, no sancions
+		Monitored( $name : agent, round == $round )
+		not Sanctioned( agent == $name, round == $round )
+		$nonmember : NonMember( name == $name, pool == $pid ) 
+		Appropriated(agent == $name, round == $round, $approp : quantity, pool == $pool, $approp > 0)
+	then 
+		Sanctioned san =  new Sanctioned($name, $round, 1);
+		insert( san );
+		modify ( $nonmember ){
+			setActive(false)
+		}
+		modify($pool){//appropriate less in future rounds
+			setOutAppropriationFrequency( $pool.getOutAppropriationFrequency()
+				 - ($pool.getOutAppropriationFrequency() *$pool.getOutImproveFrequency()) )
+		}
+		logger.info(san);
+end
+
+rule "Eliminate sancioned member from demandQueue"
+	ruleflow-group "report"
+	no-loop
+	when
+		$i : Institution($iid : id, $round : round, allocationMethod == RaMethod.QUEUE)
+		Sanctioned($name : agent, round == $round)
+		Member(name == $name, institutionId == $iid)
+		$d : Demand( agent == $name, this memberOf $i.demandQueue ) //placed demand in previous timestep, still in queue.
+	then
+		modify($i){
+			demandQueue.remove($d);
+		}
+end
+
+rule "Members appeal against sanction"
+	ruleflow-group "appeal"
+	salience 1000
+	when
+		$i : Institution($iid : id, $round : round, principle6 == true)
+		Sanctioned($name : agent, round == $round)
+		$member: Member(name == $name, institutionId == $iid, active == false)
+		not (Sanctioned(agent == $name, $rd : round, $round - $rd <= $i.appealtime) and
+			Appealed(agent == $name, round >= $rd))
+		not Appealed(agent == $name, round == $round)
+	then
+		Appealed appeal = new Appealed($name, $round);
+		insert(appeal);
+		modify ( $member ){
+			setActive(true)
+		}
+		logger.info(appeal);
+end
+
+rule "Members appeal after recent sanction"
+	ruleflow-group "appeal"
+	salience 1000
+	when
+		$i : Institution($iid : id, $round : round, principle6 == true)
+		Sanctioned($name : agent, round == $round)
+		$member: Member( name == $name, institutionId == $iid, active == false)
+		not (Sanctioned(agent == $name, $rd : round, $level : level, $round - ($rd + $level*$i.excludetime) <= $i.appealtime) and
+			not Appealed(agent == $name, round >= $rd))
+		not Appealed(agent == $name, round == $round)
+	then
+		Appealed appeal = new Appealed($name, $round);
+		insert(appeal);
+		modify ( $member ){
+			setActive(true)
+		}
+		logger.info(appeal);
+end
+
+rule "member exclusion"//member inactive -> nonmember active
+	ruleflow-group "exclude"
+	when
+		Institution($iid : id, $round : round, principle5 == false)
+		$member : Member($name : name, institutionId == $iid, active == false)
+		Sanctioned(agent == $name, round == $round)
+	then
+		retract($member);
+		insert(new NonMember($member));
+		logger.info("Excluded "+ $member);
+end
+
+rule "member exclusion with graduated sanctions"//member inactive -> nonmember active
+	ruleflow-group "exclude"
+	when
+		$i : Institution($iid : id, $round : round, principle5 == true)
+		$member: Member($name : name, institutionId == $iid, active == false)
+		Sanctioned(agent == $name, round == $round, $level : level, level > $i.maxSanctionLevel)
+	then
+		retract($member);
+		insert(new NonMember($member));
+		logger.info("Excluded "+ $member);
+end
+
+rule "member back after sanction" //member inactive -> member active (Pr4/5)
+	ruleflow-group "exclude"
+	no-loop
+	when
+		$i : Institution($iid : id, $round : round, principle5 == true)
+		$member: Member( $name : name, institutionId == $iid, active == false)
+		$s : Sanctioned(agent == $name, $sanRd : round, $level : level, ($sanRd + $level*$i.excludetime < $round), 
+			 $level <= $i.maxSanctionLevel)
+		not Sanctioned(agent == $name, $rd : round, $rd > $sanRd)
+	then
+		if(Random.randomDouble() < 0.1){ //applyperc = 0.1; if agent wants to get back in this timestep, once allowed
+			$member.changeBehaviour($i.getMaxSanctionLevel(), $s.getLevel());
+			modify ( $member ){
+				setActive(true)
+			}
+			logger.info("Back in: "+ $member);
+		}
+end
+
+rule "assign new head" //so far, head also governs if inactive!!
+	ruleflow-group "exclude"
+	when
+		Institution($iid : id, $round : round)
+		not( exists( Head(institutionId == $iid)))
+		$members : List( size > 0 ) from collect( Member( institutionId == $iid) )
+	then
+		Member m = (Member) $members.get(Random.randomInt($members.size()));
+		retract(m);
+		insert(new Head(m));
+		logger.info("New Head "+ m);
+end
+
+rule "End of the institution"
+	ruleflow-group 'init'
+	when 
+		$i : Institution($iid : id)
+		not( exists( Member( institutionId == $iid) ))
+	then
+		retract($i);
+		logger.info("ANARCHY!!");
+end

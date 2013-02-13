@@ -6,17 +6,16 @@ import allocation.actions.*
 import allocation.newagents.*
 import uk.ac.imperial.presage2.core.IntegerTime
 import java.lang.Math
+import java.util.List
 
 global org.apache.log4j.Logger logger
 
-declare Processed
-	action : TimestampedAction
-end
 
 declare Appropriated
-	agent : String
+	agent : String //name
 	round : int
 	quantity : double
+	pool : CommonPool
 end
 
 rule "Max level" // Given an overfilled CommonPool, reset resource level to maximum
@@ -40,7 +39,7 @@ rule "Refill pool"
 		// and there is a pool which has not been filled in this round
 		$pool : CommonPool( $t.intValue() > getLastFilled())
 		// and the institution governing this pool is in the 'Exclude' phase
-		Institution( pools contains $pool )
+		Institution( pool == $pool )
 	then // refill pool
 		double fillAmount = $pool.getMaxLevel() / 2;
 		int time = $t.intValue();
@@ -82,39 +81,28 @@ rule "NonMember appropriation"
 		$pool : CommonPool( id == $pid )
 		not Appropriated( round == $t.intValue(), agent == $nonmember.getName() )
 	then
-		Appropriated app = new Appropriated( $nonmember.getName(), $t.intValue(), $nonmember.appropriate( $pool ) );
+		Appropriated app = new Appropriated( $nonmember.getName(), $t.intValue(), $nonmember.appropriate( $pool ), $pool );
 		insert( app );
 		modify($pool) {
 			setResourceLevel( $pool.getResourceLevel() - app.getQuantity() )
 		}
 		logger.info(app);
-		logger.info($pool);
+		//logger.info($pool);
 end
 
 rule "End of the world"
 	ruleflow-group 'init'
 	when
 		$pool : CommonPool( resourceLevel < 0 )
+		Institution($iid : id, pool == $pool)
+		$members : List() from collect( Member( institutionId == $iid) )
 	then
 		retract($pool);
+		for(Object m : $members) {
+			retract(m);
+			insert(new NonMember((Member) m));
+		}
 		logger.info("DEPLEATED!!");
 end
 
-rule "Prune Appropriate"
-	when
-		$pool : CommonPool( $id : id )
-		Institution( pools contains $pool, $round : round )
-		$a : Appropriate( pool == $id, round < $round )
-	then
-		retract($a);
-		//logger.info("Prune "+ $a);
-end
-
-rule "Prune Processed"
-	when
-		$p : Processed($a : action)
-		not(exists(TimestampedAction(this == $p.action)))
-	then
-		retract( $p );
-end
 

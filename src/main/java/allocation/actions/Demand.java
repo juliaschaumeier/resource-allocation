@@ -33,6 +33,6 @@ public class Demand {
 
 	@Override
 	public String toString() {
-		return "Demand [quantity=" + quantity + "]";
+		return "Demand ["+ agent +", " + String.format("%.2f", quantity) + "]";
 	};
 }
