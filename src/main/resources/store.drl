@@ -5,13 +5,14 @@ import allocation.facts.*
 import allocation.actions.*
 import allocation.newagents.*
 import java.lang.Double
+import java.lang.Integer
 
 global org.apache.log4j.Logger logger
 global uk.ac.imperial.presage2.core.db.StorageService sto
 
-rule "Log pool level"
+rule "Log pool level after appropriation"
 	salience -1000
-	ruleflow-group 'init'
+	ruleflow-group 'exclude'
 	when
 		$pool : CommonPool($pid : id, $level : resourceLevel)
 		Institution($round : round, pool == $pool)
@@ -19,3 +20,44 @@ rule "Log pool level"
 		logger.info("Pool level: "+ $level);
 		sto.getSimulation().getEnvironment().setProperty("level", $round, Double.toString($level));
 end
+
+rule "Log accumulative appropration"
+	salience -1000
+	ruleflow-group 'exclude'
+	when
+		Institution($round : round, $pool : pool)
+		$appropriations :  List() from collect ( Appropriated(pool == $pool, round == $round))
+	then
+		double appSum = 0;
+		for (Object a : $appropriations){
+			Appropriated app = (Appropriated) a;
+			appSum += app.getQuantity();
+		}
+		logger.info("Accumulative appropriation: "+ appSum);
+		sto.getSimulation().getEnvironment().setProperty("accum. appropriation", $round, Double.toString(appSum));
+end
+
+rule "Log active members"
+	salience -1000
+	ruleflow-group 'exclude'
+	when
+		Institution($iid : id, $round : round, $pool : pool)//does round not work if there's no Institution left?? But then there's no members either...
+		$members :  List() from collect ( Member(institutionId == $iid, pool == $pool, round == $round, active == true))
+	then
+		logger.info("Active members: "+ $members.size());
+		sto.getSimulation().getEnvironment().setProperty("active members", $round, Integer.toString($members.size()));
+end
+
+rule "log whether institution is alive or dead" //for averaging purposes
+	salience -1000
+	ruleflow-group 'exclude'
+	when
+		$t : IntegerTime( )
+		$institutions : List() from collect ( Institution(round == $t.intValue()) )
+	then
+		logger.info("Live institutions "+ $institutions.size());
+		sto.getSimulation().getEnvironment().setProperty("live institution", $t.intValue(), Integer.toString($institutions.size()));
+end
+		
+
+		

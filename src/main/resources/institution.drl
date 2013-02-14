@@ -277,7 +277,7 @@ rule "Member appropriation - no allocation"
 	ruleflow-group "appropriate"
 	no-loop
 	when
-		$t : IntegerTime( )
+		$t : IntegerTime( ) //when do we need that and when not??
 		$member : Member( $iid : institutionId, $pid : pool )
 		$i : Institution( id == $iid, $round : round )
 		$pool : CommonPool( id == $pid )
@@ -436,7 +436,6 @@ end
 
 rule "Members appeal against sanction"
 	ruleflow-group "appeal"
-	salience 1000
 	when
 		$i : Institution($iid : id, $round : round, principle6 == true)
 		Sanctioned($name : agent, round == $round)
@@ -455,7 +454,6 @@ end
 
 rule "Members appeal after recent sanction"
 	ruleflow-group "appeal"
-	salience 1000
 	when
 		$i : Institution($iid : id, $round : round, principle6 == true)
 		Sanctioned($name : agent, round == $round)
