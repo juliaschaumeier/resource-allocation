@@ -1,0 +1,21 @@
+package allocation
+
+import allocation.*
+import allocation.facts.*
+import allocation.actions.*
+import allocation.newagents.*
+import java.lang.Double
+
+global org.apache.log4j.Logger logger
+global uk.ac.imperial.presage2.core.db.StorageService sto
+
+rule "Log pool level"
+	salience -1000
+	ruleflow-group 'init'
+	when
+		$pool : CommonPool($pid : id, $level : resourceLevel)
+		Institution($round : round, pool == $pool)
+	then
+		logger.info("Pool level: "+ $level);
+		sto.getSimulation().getEnvironment().setProperty("level", $round, Double.toString($level));
+end

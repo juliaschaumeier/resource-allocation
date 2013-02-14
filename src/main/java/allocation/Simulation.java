@@ -12,6 +12,7 @@ import org.drools.runtime.StatefulKnowledgeSession;
 
 import uk.ac.imperial.presage2.core.IntegerTime;
 import uk.ac.imperial.presage2.core.Time;
+import uk.ac.imperial.presage2.core.db.DatabaseModule;
 import uk.ac.imperial.presage2.core.db.DatabaseService;
 import uk.ac.imperial.presage2.core.db.StorageService;
 import uk.ac.imperial.presage2.core.event.EventBus;
@@ -28,7 +29,6 @@ import com.google.inject.Inject;
 public class Simulation extends InjectedSimulation {
 
 	private final Logger logger = Logger.getLogger(Simulation.class);
-	private StatefulKnowledgeSession session;
 	private Time t = new IntegerTime();
 
 	@Parameter(name = "agents", optional = true)
@@ -99,16 +99,6 @@ public class Simulation extends InjectedSimulation {
 		super(modules);
 	}
 
-	@Inject
-	public void setSession(StatefulKnowledgeSession session) {
-		this.session = session;
-	}
-
-	@Inject
-	public void eventBusSubscribe(EventBus eb) {
-		eb.subscribe(this);
-	}
-
 	@Override
 	protected Set<AbstractModule> getModules() {
 		Set<AbstractModule> modules = new HashSet<AbstractModule>();
@@ -141,38 +131,6 @@ public class Simulation extends InjectedSimulation {
 			}
 		}
 		setParameters(providedParams);
-	}
-
-	/**
-	 * Update the round phase for each institution in the simulation.
-	 * 
-	 * @param e
-	 */
-	@EventListener
-	public void incrementTime(EndOfTimeCycle e) {
-		t.increment();
-		session.update(session.getFactHandle(t), t);
-		for (Institution i : institutions) {
-			Phase next = Phase.values()[(i.getState().ordinal() + 1)
-					% Phase.values().length];
-			i.setState(next);
-			if (next == Phase.CFV)
-				i.incrementRound();
-			session.update(session.getFactHandle(i), i);
-			logger.info(i);
-		}
-	}
-
-	public StorageService getStorage() {
-		return this.storage;
-	}
-
-	public DatabaseService getDatabase() {
-		return this.database;
-	}
-	
-	public void initDatabase() {
-		super.initDatabase();
 	}
 
 }
