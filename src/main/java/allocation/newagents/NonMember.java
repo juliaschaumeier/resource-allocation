@@ -10,7 +10,7 @@ public class NonMember extends Agent {
 
 	public NonMember(String name, double compliancyDegree, double initialCompliancyDegree,
 			double standardRequest, int pool) {
-		super(name, pool, compliancyDegree, initialCompliancyDegree, standardRequest);//what does pool mean here?? He doesn't have a pool really..
+		super(name, pool, compliancyDegree, initialCompliancyDegree, standardRequest);
 	}
 
 	public NonMember(Member m) {//is that when a member becomes a non-member??
@@ -23,6 +23,9 @@ public class NonMember extends Agent {
 		if (initialCompliancyDegree > 1 && active
 				&& Random.randomDouble() < pool.getOutAppropriationFrequency()) {
 			appropriateAmount = standardRequest * initialCompliancyDegree;
+		}
+		if (appropriateAmount < 0){
+			appropriateAmount = 0;
 		}
 		return appropriateAmount;
 	}

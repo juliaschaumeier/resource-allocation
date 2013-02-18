@@ -21,7 +21,8 @@ public class Head extends Member {
 
 	public Head(String name, double compliancyDegree, double initialCompliancyDegree, double standardRequest, double noRequestPercentage,
 			double changeBehaviourPercentage, double improveBehaviour, int pool, int iid) {
-		super(name, compliancyDegree, initialCompliancyDegree, standardRequest, noRequestPercentage, changeBehaviourPercentage, improveBehaviour, pool, iid);
+		super(name, compliancyDegree, initialCompliancyDegree, standardRequest, noRequestPercentage, 
+				changeBehaviourPercentage, improveBehaviour, pool, iid);
 	}
 
 	/**
@@ -29,7 +30,7 @@ public class Head extends Member {
 	 * 
 	 * @param m
 	 */
-	public Head(Member m) {//define stuff to put in head!!
+	public Head(Member m) {//what if a head becomes a normal member again??
 		super(m);
 	}
 
@@ -43,7 +44,7 @@ public class Head extends Member {
 	}
 
 	public Set<Allocation> allocate(Institution i, CommonPool pool,
-			List<Demand> demands) { //list automatically created when asked for??
+			List<Demand> demands) { 
 		
 		Set<Allocation> allocations = new HashSet<Allocation>();
 		//(out)monitoring only !=O if Pr is on
@@ -69,8 +70,8 @@ public class Head extends Member {
 			while (!demandQueue.isEmpty()) {
 				if (level >= demandQueue.peek().getQuantity()) {
 					Demand d = demandQueue.poll();
-					allocations.add(new Allocation(i.getRound(), d.getAgent(),
-							d.getQuantity()));
+					allocations.add(new Allocation( d.getAgent(), i.getRound(),
+							d.getQuantity(), i.getPool()));
 					level -= d.getQuantity();
 				} else {
 					break;
@@ -84,13 +85,13 @@ public class Head extends Member {
 			for (Demand d : demands) {
 				if (level >= d.getQuantity() || level >= fairshare){
 					if(d.getQuantity() > fairshare){
-						allocations.add(new Allocation(i.getRound(), d.getAgent(),
-								fairshare));
+						allocations.add(new Allocation(d.getAgent(), i.getRound(), 
+								fairshare, i.getPool()));
 						level -= fairshare;
 					}
 					else{
-						allocations.add(new Allocation(i.getRound(), d.getAgent(),
-								d.getQuantity()));
+						allocations.add(new Allocation(d.getAgent(), i.getRound(),
+								d.getQuantity(), i.getPool()));
 						level -= d.getQuantity();	
 					}
 				}
@@ -99,7 +100,7 @@ public class Head extends Member {
 				}
 			}
 			break;
-		}//switch
+		}//end switch
 		return allocations;
 	}
 
@@ -117,6 +118,7 @@ public class Head extends Member {
 				}
 			}
 		}
+		// nonmember monitoring
 		if (i.isPrinciple1()) {
 			for (Agent ag : nonMembers) {
 				if (ag.active

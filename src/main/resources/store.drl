@@ -6,6 +6,7 @@ import allocation.actions.*
 import allocation.newagents.*
 import java.lang.Double
 import java.lang.Integer
+import java.util.List
 
 global org.apache.log4j.Logger logger
 global uk.ac.imperial.presage2.core.db.StorageService sto
@@ -21,7 +22,7 @@ rule "Log pool level after appropriation"
 		sto.getSimulation().getEnvironment().setProperty("level", $round, Double.toString($level));
 end
 
-rule "Log accumulative appropration"
+rule "Log sum of approprations"
 	salience -1000
 	ruleflow-group 'exclude'
 	when
@@ -33,16 +34,16 @@ rule "Log accumulative appropration"
 			Appropriated app = (Appropriated) a;
 			appSum += app.getQuantity();
 		}
-		logger.info("Accumulative appropriation: "+ appSum);
-		sto.getSimulation().getEnvironment().setProperty("accum. appropriation", $round, Double.toString(appSum));
+		logger.info("Sum of appropriation: "+ appSum);
+		sto.getSimulation().getEnvironment().setProperty("appropriation sum", $round, Double.toString(appSum));
 end
 
-rule "Log active members"
+rule "Log active members" //activeMemberCount is value start only
 	salience -1000
 	ruleflow-group 'exclude'
 	when
-		Institution($iid : id, $round : round, $pool : pool)//does round not work if there's no Institution left?? But then there's no members either...
-		$members :  List() from collect ( Member(institutionId == $iid, pool == $pool, round == $round, active == true))
+		Institution($iid : id, $round : round, $pool : pool)
+		$members :  List() from collect ( Member(institutionId == $iid, active == true))
 	then
 		logger.info("Active members: "+ $members.size());
 		sto.getSimulation().getEnvironment().setProperty("active members", $round, Integer.toString($members.size()));

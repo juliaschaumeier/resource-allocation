@@ -2,17 +2,17 @@ package allocation.actions;
 
 public class Demand {
 
-	final int round;
-	final int pool;
 	final String agent;
+	final int round;
 	final double quantity;
-
-	public Demand(int round, int pool, String agent, double quantity) {
+	final int pool;
+	
+	public Demand( String agent,int round, double quantity, int pool) {
 		super();
-		this.round = round;
-		this.pool = pool;
 		this.agent = agent;
+		this.round = round;
 		this.quantity = quantity;
+		this.pool = pool;
 	}
 
 	public double getQuantity() {

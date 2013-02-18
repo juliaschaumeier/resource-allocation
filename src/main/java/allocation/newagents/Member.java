@@ -58,6 +58,7 @@ public class Member extends Agent {
 		this.changeBehaviourPercentage = changeBehaviourPercentage;
 		this.improveBehaviour = improveBehaviour;
 	}
+	
 
 	/**
 	 * Get appropriation for this agent
@@ -111,6 +112,11 @@ public class Member extends Agent {
 		}
 		
 		else demand = 0;
+		
+		if(demand < 0){
+			demand = 0;
+		}
+		
 		return demand;
 	}
 	

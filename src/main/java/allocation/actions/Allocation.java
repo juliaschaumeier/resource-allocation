@@ -1,16 +1,24 @@
 package allocation.actions;
 
+import allocation.facts.CommonPool;
+
 public class Allocation {
 
-	final int round;
 	final String agent;
+	final int round;
 	final public double quantity;
+	final CommonPool pool;
 
-	public Allocation(int t, String agent, double quantity) {
+	public Allocation(String agent, int t, double quantity, CommonPool pool) {
 		super();
-		this.round = t;
 		this.agent = agent;
+		this.round = t;
 		this.quantity = quantity;
+		this.pool = pool;
+	}
+	
+	public CommonPool getPool() {
+		return pool;
 	}
 
 	public double getQuantity() {
