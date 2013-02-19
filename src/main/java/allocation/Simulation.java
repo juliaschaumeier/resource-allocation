@@ -133,4 +133,13 @@ public class Simulation extends InjectedSimulation {
 		setParameters(providedParams);
 	}
 
+	@Override
+	public void run() {
+		DroolsSimulation dSim = new DroolsSimulation(this, false);
+		dSim.sto = this.storage;
+		dSim.db = this.database;
+		dSim.simPersist = this.simPersist;
+		dSim.run();
+	}
+
 }

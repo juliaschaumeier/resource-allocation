@@ -35,8 +35,19 @@ import com.google.inject.Injector;
 
 public class DroolsSimulation {
 
-	private static final Logger logger = Logger
-			.getLogger(DroolsSimulation.class);
+	private final Logger logger = Logger.getLogger(DroolsSimulation.class);
+	private final Simulation sim;
+	private final boolean enableDroolsLogger;
+
+	DatabaseService db = null;
+	StorageService sto = null;
+	PersistentSimulation simPersist = null;
+
+	DroolsSimulation(Simulation sim, boolean enableDroolsLogger) {
+		super();
+		this.sim = sim;
+		this.enableDroolsLogger = enableDroolsLogger;
+	}
 
 	public static void main(String[] args) throws Exception {
 		System.out.print("Parameters given: ");
@@ -53,6 +64,12 @@ public class DroolsSimulation {
 				new HashSet<AbstractModule>());
 		sim.parseParameters(args);
 
+		DroolsSimulation dSim = new DroolsSimulation(sim, true);
+		dSim.run();
+
+	}
+
+	void run() {
 		// drools initialisation
 		String[] ruleSets = { "environment.drl", "institution.drl", "store.drl" };
 		KnowledgeBuilder kbuilder = KnowledgeBuilderFactory
@@ -84,8 +101,11 @@ public class DroolsSimulation {
 		// create session
 		StatefulKnowledgeSession session = kbase.newStatefulKnowledgeSession(
 				sessionConf, null);
-		KnowledgeRuntimeLogger droolsLogger = KnowledgeRuntimeLoggerFactory
-				.newFileLogger(session, "test");
+		KnowledgeRuntimeLogger droolsLogger = null;
+		if (enableDroolsLogger) {
+			droolsLogger = KnowledgeRuntimeLoggerFactory.newFileLogger(session,
+					"test");
+		}
 
 		/*
 		 * session.addEventListener(new DefaultAgendaEventListener() { public
@@ -93,27 +113,20 @@ public class DroolsSimulation {
 		 * super.afterActivationFired(event); logger.debug(event); } });
 		 */
 
-		// database load
-		DatabaseService db = null;
-		StorageService sto = null;
-		PersistentSimulation simPersist = null;
-		try {
-			// load db and storage services with an injector
-			// the use of scenario builder is a hack to get sql storage to work.
-			Injector dbInjector = new Scenario.Builder(DatabaseModule.load())
-					.getInjector();
-			db = dbInjector.getInstance(DatabaseService.class);
-			sto = dbInjector.getInstance(StorageService.class);
-			db.start();
-			simPersist = sto.createSimulation("Resource allocation",
-					DroolsSimulation.class.getName(), "INITIALISING",
-					sim.finishTime);
-			for (String s : sim.getParameters().keySet()) {
-				simPersist.addParameter(s, sim.getParameter(s));
-			}
-		} catch (Exception e) {
-			logger.warn("Error loading database", e);
-		}
+		/*
+		 * // database load DatabaseService db = null; StorageService sto =
+		 * null; PersistentSimulation simPersist = null; try { // load db and
+		 * storage services with an injector // the use of scenario builder is a
+		 * hack to get sql storage to work. Injector dbInjector = new
+		 * Scenario.Builder(DatabaseModule.load()) .getInjector(); db =
+		 * dbInjector.getInstance(DatabaseService.class); sto =
+		 * dbInjector.getInstance(StorageService.class); db.start(); simPersist
+		 * = sto.createSimulation("Resource allocation",
+		 * DroolsSimulation.class.getName(), "INITIALISING", sim.finishTime);
+		 * for (String s : sim.getParameters().keySet()) {
+		 * simPersist.addParameter(s, sim.getParameter(s)); } } catch (Exception
+		 * e) { logger.warn("Error loading database", e); }
+		 */
 
 		// session globals
 		session.setGlobal("logger", logger);
@@ -194,7 +207,8 @@ public class DroolsSimulation {
 					simPersist.setCurrentTime(t.intValue());
 			}
 		} finally {
-			droolsLogger.close();
+			if (enableDroolsLogger)
+				droolsLogger.close();
 		}
 		if (simPersist != null) {
 			simPersist.setState("COMPLETE");
