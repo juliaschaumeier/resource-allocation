@@ -155,8 +155,15 @@ public class DroolsSimulation {
 			Member a;
 			double comp;// for (initial)compiancyDegree
 			// set the first agent to be the head initially.
-			if (i == 0) {
+			if (i == 0 && sim.numCheat!=0) {
+				// cheating head
 				comp = 1 + sim.greedMax * Random.randomDouble();
+				a = new Head("elf " + i, comp, comp, sim.standardRequest,
+						sim.noRequestPercentage, sim.changeBehaviourPercentage,
+						sim.improveBehaviour, 0, 0);
+			} else if (i == 0 && sim.numCheat==0) {
+				// good head
+				comp = 1 - sim.altrMax * Random.randomDouble();
 				a = new Head("elf " + i, comp, comp, sim.standardRequest,
 						sim.noRequestPercentage, sim.changeBehaviourPercentage,
 						sim.improveBehaviour, 0, 0);
@@ -184,7 +191,7 @@ public class DroolsSimulation {
 				a = new NonMember("outelf " + i, comp, comp,
 						sim.standardRequest, 0);
 			} else {
-				comp = 1 + sim.altrMax * Random.randomDouble();
+				comp = 1 - sim.altrMax * Random.randomDouble();
 				a = new NonMember("outelf " + i, comp, comp,
 						sim.standardRequest, 0);
 			}

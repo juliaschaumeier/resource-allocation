@@ -35,12 +35,12 @@ public class Simulation extends InjectedSimulation {
 	public int agents = 100;
 
 	@Parameter(name = "numCheat", optional = true)
-	public int numCheat = 50;
+	public int numCheat = 0;
 
 	@Parameter(name = "outAgents", optional = true)
 	public int outAgents = 20;
 	@Parameter(name = "outNumCheat", optional = true)
-	public int outNumCheat = 10;
+	public int outNumCheat = 0;
 
 	@Parameter(name = "standardRequest", optional = true)
 	public double standardRequest = 50;
@@ -61,11 +61,11 @@ public class Simulation extends InjectedSimulation {
 											// compliancyDegree
 
 	@Parameter(name = "monitoringLevel", optional = true)
-	public double monitoringLevel = 0.1;
+	public double monitoringLevel = 0.1; //0.1=high; 0.01=low
 	@Parameter(name = "monitoringCost", optional = true)
 	public double monitoringCost = 0.1 * standardRequest;
 	@Parameter(name = "outMonitoringLevel", optional = true)
-	public double outMonitoringLevel = 0.1;
+	public double outMonitoringLevel = 0.1; //0.1=high; 0.01=low
 	@Parameter(name = "outMonitoringCost", optional = true)
 	public double outMonitoringCost = 0.1 * standardRequest;
 	@Parameter(name = "outAppropriationFrequency", optional = true)
@@ -76,15 +76,15 @@ public class Simulation extends InjectedSimulation {
 	public int appealtime = 30;
 
 	@Parameter(name = "principle2", optional = true)
-	public boolean principle2 = true;
+	public boolean principle2 = false;
 	@Parameter(name = "principle3", optional = true)
-	public boolean principle3 = true;
+	public boolean principle3 = false;
 	@Parameter(name = "principle4", optional = true)
-	public boolean principle4 = true;
+	public boolean principle4 = false;
 	@Parameter(name = "principle5", optional = true)
-	public boolean principle5 = true;
+	public boolean principle5 = false;
 	@Parameter(name = "principle6", optional = true)
-	public boolean principle6 = true;
+	public boolean principle6 = false;
 
 	@Parameter(name = "unintentionalError", optional = true)
 	public boolean unintentionalError = false;
