@@ -6,6 +6,8 @@ import allocation.actions.Vote;
 import allocation.facts.CommonPool;
 import allocation.facts.Institution;
 import allocation.facts.RaMethod;
+//import allocation.DroolsSimulation;
+
 
 public class Member extends Agent {
 
@@ -141,16 +143,18 @@ public class Member extends Agent {
 				appropriateAmount = preferredRequest;
 			}
 
-			if(i.isUnintentionalError() && Random.randomDouble() < noisePercentage){//not every agent subject to noise
+			if(i.isUnintentionalError() && Random.randomDouble() < i.getNoisePercentage()){//not every agent subject to noise
 				double share = standardRequest;
 				if( i.isPrinciple2() && i.getAllocationMethod() == RaMethod.RATION ){
 					share = i.getFairshare();
 				}
 				if(Random.randomDouble() < 0.5){
-					appropriateAmount += share*noiseLevel*Random.randomDouble(); 
+					appropriateAmount += share*i.getNoiseLevel()*Random.randomDouble(); 
+					System.out.println("oups too much " + this.name);
 				}
 				else{
-					appropriateAmount -= share*noiseLevel*Random.randomDouble();
+					appropriateAmount -= share*i.getNoiseLevel()*Random.randomDouble();
+					System.out.println("oups too little " + this.name);
 				}
 			}
 			if (appropriateAmount < 0){

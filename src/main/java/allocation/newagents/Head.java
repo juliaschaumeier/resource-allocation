@@ -30,7 +30,7 @@ public class Head extends Member {
 	 * 
 	 * @param m
 	 */
-	public Head(Member m) {//what if a head becomes a normal member again??
+	public Head(Member m) {
 		super(m);
 	}
 
@@ -48,7 +48,6 @@ public class Head extends Member {
 		
 		Set<Allocation> allocations = new HashSet<Allocation>();
 		//(out)monitoring only !=O if Pr is on
-		//what if level is already < 0 => should throw bankrupt here or wait??
 		double level = pool.getResourceLevel() - monitoring
 				* i.getMonitoringCost() - outMonitoring*i.getOutMonitoringCost();
 		if (level < 0){
@@ -80,7 +79,7 @@ public class Head extends Member {
 			break;
 		case RATION:
 			double fairshare = level/demands.size();
-			i.setFairshare(fairshare);//need that for later!!
+			i.setFairshare(fairshare);//need that for later
 			Collections.shuffle(demands);
 			for (Demand d : demands) {
 				if (level >= d.getQuantity() || level >= fairshare){

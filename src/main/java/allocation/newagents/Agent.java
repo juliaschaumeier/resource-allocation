@@ -7,8 +7,6 @@ public abstract class Agent {
 	double compliancyDegree;
 	final double initialCompliancyDegree;//static?? need it when member->nonMember
 	final double standardRequest;
-	double noisePercentage;//where to initialise these, value in simulation.java??
-	double noiseLevel;
 	boolean active = true;
 
 	public Agent(String name, int pool, double compliancyDegree, double initialCompliancyDegree,
@@ -26,14 +24,12 @@ public abstract class Agent {
 	 * Copy ctor
 	 * @param a
 	 */
-	public Agent(Agent a) {//what's that for??
+	public Agent(Agent a) {
 		this.name = a.name;
 		this.pool = a.pool;
 		this.compliancyDegree = a.compliancyDegree;
 		this.initialCompliancyDegree = compliancyDegree;
 		this.standardRequest = a.standardRequest;
-		this.noisePercentage = a.noisePercentage;
-		this.noiseLevel = a.noiseLevel;
 		this.active = a.active;
 	}
 	
@@ -61,13 +57,6 @@ public abstract class Agent {
 		return standardRequest;
 	}
 	
-	public double getNoisePercentage() {
-		return noisePercentage;
-	}
-
-	public double getNoiseLevel() {
-		return noiseLevel;
-	}
 
 	@Override
 	public int hashCode() {

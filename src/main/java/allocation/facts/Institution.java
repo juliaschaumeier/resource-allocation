@@ -29,21 +29,21 @@ public class Institution {
 	boolean voteRaMethod = false;
 	int memberCount = 0;
 	int activeMemberCount = 0;
-	int samplingrate = 50; //external agent decides every x timesteps about RaMethod
+	final int samplingrate; //external agent decides every x timesteps about RaMethod
 
 	RaMethod allocationMethod = RaMethod.QUEUE;
 	final double monitoringLevel;
 	final double monitoringCost;
 	final double outMonitoringLevel;
 	final double outMonitoringCost;
+	final double noisePercentage;
+	final double noiseLevel;
 	
-	double fairshare = 50; //if RaMethod=RATION; set in head.allocate()	
+	double fairshare = 50; // for RaMethod=RATION; set in head.allocate()	
 	final int appealtime; //how long no offence to be let off
 	int maxSanctionLevel = 3; //for graduated sanctions
 	int excludetime = 5;//multiplied with sanction level
 	
-	//institution should always have a head, if left choose one at random!!
-
 	final CommonPool pool;
 
 	public Queue<Demand> demandQueue = new LinkedList<Demand>();
@@ -51,7 +51,7 @@ public class Institution {
 	public Institution(StatefulKnowledgeSession session, int id,
 			int initialAgents, CommonPool pool, boolean principle2, boolean principle3,
 			boolean principle4, boolean principle5, boolean principle6, boolean unintentionalError, double monitoringLevel, double monitoringCost, 
-			double outMonitoringLevel, double outMonitoringCost, int appealtime) {
+			double outMonitoringLevel, double outMonitoringCost, double noisePercentage, double noiseLevel, int appealtime, int samplingrate) {
 		super();
 		this.session = session;
 		this.id = id;
@@ -67,7 +67,10 @@ public class Institution {
 		this.monitoringCost = monitoringCost;
 		this.outMonitoringLevel = outMonitoringLevel;
 		this.outMonitoringCost = outMonitoringCost;
+		this.noisePercentage = noisePercentage;
+		this.noiseLevel = noiseLevel;
 		this.appealtime = appealtime;
+		this.samplingrate = samplingrate;
 	}
 
 	public int getId() {
@@ -210,6 +213,14 @@ public class Institution {
 
 	public double getOutMonitoringCost() {
 		return outMonitoringCost;
+	}
+
+	public double getNoisePercentage() {
+		return noisePercentage;
+	}
+
+	public double getNoiseLevel() {
+		return noiseLevel;
 	}
 
 	public int getAppealtime() {

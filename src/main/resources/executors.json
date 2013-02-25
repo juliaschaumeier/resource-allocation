@@ -6,5 +6,5 @@
 			"__comment": "Local sub process executor with 1 concurrent process."
 		}
 	],
-	"enableLogs": false
+	"enableLogs": true
 }

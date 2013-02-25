@@ -63,7 +63,7 @@ public class Simulation extends InjectedSimulation {
 	@Parameter(name = "monitoringLevel", optional = true)
 	public double monitoringLevel = 0.1; //0.1=high; 0.01=low
 	@Parameter(name = "monitoringCost", optional = true)
-	public double monitoringCost = 0.1 * standardRequest;
+	public double monitoringCost = 1.0 * standardRequest;
 	@Parameter(name = "outMonitoringLevel", optional = true)
 	public double outMonitoringLevel = 0.1; //0.1=high; 0.01=low
 	@Parameter(name = "outMonitoringCost", optional = true)
@@ -74,6 +74,8 @@ public class Simulation extends InjectedSimulation {
 	public double outImproveFrequency = 0.1;
 	@Parameter(name = "appealtime", optional = true)
 	public int appealtime = 30;
+	@Parameter(name = "samplingrate", optional = true)
+	public int samplingrate = 50;
 
 	@Parameter(name = "principle2", optional = true)
 	public boolean principle2 = false;

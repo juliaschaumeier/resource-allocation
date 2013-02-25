@@ -13,7 +13,7 @@ public class NonMember extends Agent {
 		super(name, pool, compliancyDegree, initialCompliancyDegree, standardRequest);
 	}
 
-	public NonMember(Member m) {//is that when a member becomes a non-member??
+	public NonMember(Member m) {
 		super(m);
 		// TODO 
 	}

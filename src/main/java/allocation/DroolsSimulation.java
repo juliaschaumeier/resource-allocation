@@ -143,7 +143,8 @@ public class DroolsSimulation {
 				sim.principle2, sim.principle3, sim.principle4, sim.principle5,
 				sim.principle6, sim.unintentionalError, sim.monitoringLevel,
 				sim.monitoringCost, sim.outMonitoringLevel,
-				sim.outMonitoringCost, sim.appealtime);
+				sim.outMonitoringCost, sim.noisePercentage, sim.noiseLevel, 
+				sim.appealtime, sim.samplingrate);
 
 		// insert pool and institution into drools session.
 		session.insert(pool0);
