@@ -2,11 +2,15 @@ package allocation.facts;
 
 import java.util.LinkedList;
 import java.util.Queue;
+import java.util.List;
+import java.util.ArrayList;
 
 import org.drools.runtime.StatefulKnowledgeSession;
 
 import allocation.Phase;
 import allocation.actions.Demand;
+import allocation.newagents.Member;
+import allocation.newagents.Head;
 
 public class Institution {
 
@@ -25,11 +29,13 @@ public class Institution {
 	boolean unintentionalError = false;
 
 	final int initialAgents;
-	boolean voteHead = false; //head decides every timestep in CFV what to vote for
+	boolean voteHead = false; //was set in every timestep before ('Disable votes'), changed that.
 	boolean voteRaMethod = false;
-	int memberCount = 0;
+	final boolean headDecides;
+	//int memberCount = 0;
 	int activeMemberCount = 0;
-	final int samplingrate; //external agent decides every x timesteps about RaMethod
+	final int samplingrateRaMethod; //external agent decides every x timesteps about RaMethod
+	final int samplingrateHead;
 
 	RaMethod allocationMethod = RaMethod.QUEUE;
 	final double monitoringLevel;
@@ -47,11 +53,15 @@ public class Institution {
 	final CommonPool pool;
 
 	public Queue<Demand> demandQueue = new LinkedList<Demand>();
+	public List<Member> instMembers = new ArrayList<Member>();
+	public Head instHead;
 
 	public Institution(StatefulKnowledgeSession session, int id,
 			int initialAgents, CommonPool pool, boolean principle2, boolean principle3,
-			boolean principle4, boolean principle5, boolean principle6, boolean unintentionalError, double monitoringLevel, double monitoringCost, 
-			double outMonitoringLevel, double outMonitoringCost, double noisePercentage, double noiseLevel, int appealtime, int samplingrate) {
+			boolean principle4, boolean principle5, boolean principle6, boolean unintentionalError,
+			boolean voteHead, boolean voteRaMethod, boolean headDecides, double monitoringLevel, double monitoringCost, 
+			double outMonitoringLevel, double outMonitoringCost, double noisePercentage,
+			double noiseLevel, int appealtime, int samplingrateRaMethod, int samplingrateHead) {
 		super();
 		this.session = session;
 		this.id = id;
@@ -62,6 +72,9 @@ public class Institution {
 		this.principle5 = principle5;
 		this.principle6 = principle6;
 		this.unintentionalError = unintentionalError;
+		this.voteHead = voteHead;
+		this.voteRaMethod = voteRaMethod;
+		this.headDecides = headDecides;
 		this.initialAgents = initialAgents;
 		this.monitoringLevel = monitoringLevel;
 		this.monitoringCost = monitoringCost;
@@ -70,7 +83,8 @@ public class Institution {
 		this.noisePercentage = noisePercentage;
 		this.noiseLevel = noiseLevel;
 		this.appealtime = appealtime;
-		this.samplingrate = samplingrate;
+		this.samplingrateRaMethod = samplingrateRaMethod;
+		this.samplingrateHead = samplingrateHead;
 	}
 
 	public int getId() {
@@ -137,6 +151,10 @@ public class Institution {
 		return voteRaMethod;
 	}
 
+	public boolean isHeadDecides() {
+		return headDecides;
+	}
+
 	public void setVoteHead(boolean voteHead) {
 		this.voteHead = voteHead;
 	}
@@ -179,14 +197,30 @@ public class Institution {
 		return demandQueue;
 	}
 	
-	public int getMemberCount() {
-		return memberCount;
+	public List<Member> getInstMembers() {
+		return instMembers;
 	}
 
-	public void setMemberCount(int memberCount) {
-		this.memberCount = memberCount;
+	public void setInstMembers(List<Member> instMembers) {
+		this.instMembers = instMembers;
+	}
+
+	public Head getInstHead() {
+		return instHead;
+	}
+
+	public void setInstHead(Head instHead) {
+		this.instHead = instHead;
 	}
 	
+//	public int getMemberCount() {
+//		return memberCount;
+//	}
+
+//	public void setMemberCount(int memberCount) {
+//		this.memberCount = memberCount;
+//	}
+
 	public int getActiveMemberCount() {
 		return activeMemberCount;
 	}
@@ -195,8 +229,12 @@ public class Institution {
 		this.activeMemberCount = activeMemberCount;
 	}
 
-	public int getSamplingrate() {
-		return samplingrate;
+	public int getSamplingrateRaMethod() {
+		return samplingrateRaMethod;
+	}
+	
+	public int getSamplingrateHead() {
+		return samplingrateHead;
 	}
 
 	public double getMonitoringLevel() {

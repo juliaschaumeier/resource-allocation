@@ -26,6 +26,8 @@ import uk.ac.imperial.presage2.core.simulator.Scenario;
 import uk.ac.imperial.presage2.core.util.random.Random;
 import allocation.facts.CommonPool;
 import allocation.facts.Institution;
+import allocation.facts.RaMethod;
+import allocation.facts.Profile;
 import allocation.newagents.Head;
 import allocation.newagents.Member;
 import allocation.newagents.NonMember;
@@ -141,61 +143,112 @@ public class DroolsSimulation {
 		// create a single institution governing the pool.
 		Institution i0 = new Institution(session, 0, sim.agents, pool0,
 				sim.principle2, sim.principle3, sim.principle4, sim.principle5,
-				sim.principle6, sim.unintentionalError, sim.monitoringLevel,
-				sim.monitoringCost, sim.outMonitoringLevel,
+				sim.principle6, sim.unintentionalError, sim.voteHead, sim.voteRaMethod, sim.headDecides,
+				sim.monitoringLevel, sim.monitoringCost, sim.outMonitoringLevel,
 				sim.outMonitoringCost, sim.noisePercentage, sim.noiseLevel, 
-				sim.appealtime, sim.samplingrate);
+				sim.appealtime, sim.samplingrateRaMethod, sim.samplingrateHead);
 
 		// insert pool and institution into drools session.
 		session.insert(pool0);
 		session.insert(i0);
 		session.insert(t);
 
+		double comp;// for (initial)compiancyDegree
+		double rd;
+		Profile prof;
+		RaMethod prAbun;
+		RaMethod prCris;
 		// create member agents
 		for (int i = 0; i < sim.agents; i++) {
-			Member a;
-			double comp;// for (initial)compiancyDegree
-			// set the first agent to be the head initially.
-			if (i == 0 && sim.numCheat!=0) {
-				// cheating head
+			Member a;			
+			if (i < sim.numCheat) {// cheating member
 				comp = 1 + sim.greedMax * Random.randomDouble();
-				a = new Head("elf " + i, comp, comp, sim.standardRequest,
-						sim.noRequestPercentage, sim.changeBehaviourPercentage,
-						sim.improveBehaviour, 0, 0);
-			} else if (i == 0 && sim.numCheat==0) {
-				// good head
+			} else {// good member
 				comp = 1 - sim.altrMax * Random.randomDouble();
-				a = new Head("elf " + i, comp, comp, sim.standardRequest,
-						sim.noRequestPercentage, sim.changeBehaviourPercentage,
-						sim.improveBehaviour, 0, 0);
-			} else if (i < sim.numCheat) {
-				// cheating member
-				comp = 1 + sim.greedMax * Random.randomDouble();
-				a = new Member("elf " + i, comp, comp, sim.standardRequest,
-						sim.noRequestPercentage, sim.changeBehaviourPercentage,
-						sim.improveBehaviour, 0, 0);
-			} else {
-				// good member
-				comp = 1 - sim.altrMax * Random.randomDouble();
-				a = new Member("elf " + i, comp, comp, sim.standardRequest,
-						sim.noRequestPercentage, sim.changeBehaviourPercentage,
-						sim.improveBehaviour, 0, 0);
 			}
+			//set justice Principles in Abundance and Crisis
+			rd = Random.randomDouble();
+			if (rd < sim.justicePrPercentage1){
+				prAbun = RaMethod.EQUITY;
+				if(Random.randomDouble() < sim.justicePrTransition1){
+					prCris = RaMethod.EQUALITY;
+				}
+				else {
+					prCris = RaMethod.EQUITY;
+				}
+			}else if (rd < sim.justicePrPercentage2){
+				prAbun = RaMethod.EQUALITY;
+				if(Random.randomDouble() < sim.justicePrTransition2){
+					prCris = RaMethod.NEED;
+				}
+				else {
+					prCris = RaMethod.EQUALITY;
+				}
+			}else{
+				prAbun = RaMethod.NEED;
+				prCris = RaMethod.NEED;
+			}
+			//set agent Profiles
+			if (Random.randomDouble() < sim.profilePercentage){
+				prof = Profile.MERITIOUS;
+			} else {
+				prof = Profile.NEEDY;
+			}
+			// set the first agent to be the head initially.
+			if (i==0){
+				a = new Head("elf " + i, i, comp, comp, sim.standardRequest,
+						sim.noRequestPercentage, sim.changeBehaviourPercentage,
+						sim.improveBehaviour, 0, 0, prof, prAbun, prCris, sim.judgeSize, sim.judgeTolerance);
+			}
+			else{
+				a = new Member("elf " + i, i, comp, comp, sim.standardRequest,
+						sim.noRequestPercentage, sim.changeBehaviourPercentage,
+						sim.improveBehaviour, 0, 0, prof, prAbun, prCris, sim.judgeSize, sim.judgeTolerance);
+			}
+			
+			
+			
 			session.insert(a);
 		}
 		// create non member agents
 		for (int i = 0; i < sim.outAgents; i++) {
 			NonMember a;
-			double comp;
 			if (i < sim.outNumCheat) {
 				comp = 1 + sim.greedMax * Random.randomDouble();
-				a = new NonMember("outelf " + i, comp, comp,
-						sim.standardRequest, 0);
 			} else {
 				comp = 1 - sim.altrMax * Random.randomDouble();
-				a = new NonMember("outelf " + i, comp, comp,
-						sim.standardRequest, 0);
 			}
+			//set justice Principles in Abundance and Crisis
+			rd = Random.randomDouble();
+			if (rd < sim.justicePrPercentage1){
+				prAbun = RaMethod.EQUITY;
+				if(Random.randomDouble() < sim.justicePrTransition1){
+					prCris = RaMethod.EQUALITY;
+				}
+				else {
+					prCris = RaMethod.EQUITY;
+				}
+			}else if (rd < sim.justicePrPercentage2){
+				prAbun = RaMethod.EQUALITY;
+				if(Random.randomDouble() < sim.justicePrTransition2){
+					prCris = RaMethod.NEED;
+				}
+				else {
+					prCris = RaMethod.EQUALITY;
+				}
+			}else{
+				prAbun = RaMethod.NEED;
+				prCris = RaMethod.NEED;
+			}
+			//set agent Profiles
+			if (Random.randomDouble() < sim.profilePercentage){
+				prof = Profile.MERITIOUS;
+			} else {
+				prof = Profile.NEEDY;
+			}
+			
+			a = new NonMember("outelf " + i, i+sim.agents, comp, comp,
+					sim.standardRequest, 0, prof, prAbun, prCris, sim.judgeSize, sim.judgeTolerance);
 			session.insert(a);
 		}
 

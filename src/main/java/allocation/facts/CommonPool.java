@@ -15,11 +15,13 @@ public class CommonPool {
 	boolean depleated = false;
 	double outAppropriationFrequency; //depends on pool (and institution) how hard it is to appropriate from it
 	double outImproveFrequency;
-
+	double startResourceLevel ; //level at start of each round
+	
 	public CommonPool(int id, double initialLevel, double maxLavel, double outAppropriationFrequency, double outImproveFrequency) {
 		super();
 		this.id = id;
 		this.resourceLevel = initialLevel;
+		this.startResourceLevel = initialLevel;
 		this.maxLevel = maxLavel;
 		this.outAppropriationFrequency = outAppropriationFrequency;
 		this.outImproveFrequency = outImproveFrequency;
@@ -72,6 +74,14 @@ public class CommonPool {
 
 	public double getOutImproveFrequency() {
 		return outImproveFrequency;
+	}
+
+	public double getStartResourceLevel() {
+		return startResourceLevel;
+	}
+
+	public void setStartResourceLevel(double startResourceLevel) {
+		this.startResourceLevel = startResourceLevel;
 	}
 
 	

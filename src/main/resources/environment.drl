@@ -25,9 +25,10 @@ rule "Max level" // Given an overfilled CommonPool, reset resource level to maxi
 		$pool : CommonPool( resourceLevel > maxLevel, $max : maxLevel)
 	then
 		modify($pool) {
-			setResourceLevel($max);
+			setResourceLevel($max),
+			setStartResourceLevel($max)
 		}
-		logger.info("Pool was overfilled, reseting to max level");
+		logger.info("Pool was overfilled, resetting to max level");
 end
 
 rule "Refill pool"
@@ -61,14 +62,19 @@ rule "Refill pool"
 			fillAmount *= 0.90;
 		} else if(time < 450) {
 			fillAmount *= 0.50;
-		} else {
+		} else if(time < 500) {
 			fillAmount *= 0.91;
+		} else {
+			fillAmount *= 0.50;
 		}
+		double fill = $pool.getResourceLevel() + fillAmount;
 		modify($pool) {
-			setResourceLevel( $pool.getResourceLevel() + fillAmount),
+			setResourceLevel(fill),
+			setStartResourceLevel(fill),
 			setLastFilled( time )
+			
 		}
-		logger.info("Fill resource by "+ fillAmount +", pool resource level is "+ $pool.getResourceLevel() );
+		logger.info("Fill resource by "+ fillAmount +", pool resource level is "+ $pool.getResourceLevel());
 end
 
 rule "NonMember appropriation"
