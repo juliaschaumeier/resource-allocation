@@ -415,7 +415,26 @@ rule "Eliminate sanctioned member from demandQueue"
 		}
 end
 
+
 rule "Members appeal against sanction"
+	ruleflow-group "appeal"
+	when
+		$i : Institution($iid : id, $round : round, principle6 == true)
+		$member: Member($name : name, institutionId == $iid, active == false)
+		$san : Sanctioned(agent == $name, round == $round)
+		not (Appealed(agent == $name, $aRd : round, $round - $aRd <= $i.appealtime, institution == $iid))
+		not (Sanctioned(agent == $name, $sRd : round, $level : level, $sRd < $round, $round - ($sRd + $level*$i.excludetime) <= $i.appealtime, institution == $iid))
+	then
+		Appealed appeal = new Appealed($name, $round, $iid);
+		insert(appeal);
+		retract($san);
+		modify ( $member ){
+			setActive(true)
+		}
+		logger.info(appeal);
+end
+
+/*rule "Members appeal against sanction"
 	ruleflow-group "appeal"
 	when
 		$i : Institution($iid : id, $round : round, principle6 == true)
@@ -449,7 +468,7 @@ rule "Members appeal after recent sanction"
 			setActive(true)
 		}
 		logger.info(appeal);
-end
+end*/
 
 rule "member exclusion"//member inactive -> nonmember active
 	ruleflow-group "exclude"
