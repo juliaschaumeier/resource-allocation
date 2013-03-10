@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
+import java.lang.Math;
 
 import org.apache.log4j.Logger;
 import org.drools.runtime.StatefulKnowledgeSession;
@@ -74,8 +75,10 @@ public class Simulation extends InjectedSimulation {
 	public double outImproveFrequency = 0.1;
 	@Parameter(name = "appealtime", optional = true)
 	public int appealtime = 30;
-	@Parameter(name = "samplingrate", optional = true)
-	public int samplingrate = 50;
+	@Parameter(name = "samplingrateRaMethod", optional = true)
+	public int samplingrateRaMethod = 500;
+	@Parameter(name = "samplingrateHead", optional = true)
+	public int samplingrateHead = 500;
 
 	@Parameter(name = "principle2", optional = true)
 	public boolean principle2 = false;
@@ -94,6 +97,32 @@ public class Simulation extends InjectedSimulation {
 	public double noisePercentage = 0.05; // how many suffer from noise
 	@Parameter(name = "noiseLevel", optional = true)
 	public double noiseLevel = 0.1; // noise impact
+	
+	@Parameter(name = "voteHead", optional = true)
+	public boolean voteHead = false;
+	@Parameter(name = "voteRaMethod", optional = true)
+	public boolean voteRaMethod = true;
+	@Parameter(name = "headDecides", optional = true)
+	public boolean headDecides = false;
+	
+	
+	@Parameter(name = "justicePrPercentage1", optional = true)
+	public double justicePrPercentage1 = 0.50;//equity
+	@Parameter(name = "justicePrPercentage2", optional = true)
+	public double justicePrPercentage2 = 0.33;//equality
+	//need is rest of 1
+	@Parameter(name = "justicePrTransition1", optional = true)
+	public double justicePrTransition1 = 0.75; //equity->equality
+	@Parameter(name = "justicePrTransition2", optional = true)
+	public double justicePrTransition2 = 0.75; //equality->need
+	
+	@Parameter(name = "profilePercentage", optional = true)
+	public double profilePercentage = 0.5; //meritious, needy is rest of 1
+	
+	@Parameter(name = "judgeSize", optional = true)
+	public int judgeSize = 10; //poll size (of all members) for judging fair head
+	@Parameter(name = "judgeTolerance", optional = true)
+	public int judgeTolerance = 1;
 
 	Set<Institution> institutions = new HashSet<Institution>();
 

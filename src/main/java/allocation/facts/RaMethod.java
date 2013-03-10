@@ -1,5 +1,5 @@
 package allocation.facts;
 
 public enum RaMethod {
-	RATION, QUEUE
+	RATION, QUEUE, EQUITY, EQUALITY, NEED
 }

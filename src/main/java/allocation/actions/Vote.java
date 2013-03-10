@@ -1,15 +1,16 @@
 package allocation.actions;
 
 import allocation.facts.RaMethod;
+import allocation.newagents.Member;
 
 public class Vote {
 
 	String voter;
 	final String ballot;
 	int round;
-	final int value;
+	final Integer value;
 
-	public Vote(String ballot, int value) {
+	public Vote(String ballot, Integer value) {
 		super();
 		this.ballot = ballot;
 		this.value = value;
@@ -18,12 +19,20 @@ public class Vote {
 	public static Vote voteRaMethod(RaMethod value) {
 		return new Vote("raMethod", value.ordinal());
 	}
+	public static Vote voteHead(Member value){ 
+		if(value != null){
+			return new Vote("head", value.getId());
+		} else {
+			return new Vote("head", (Integer) null);
+		}
+		
+	}
 
 	public String getBallot() {
 		return ballot;
 	}
 
-	public int getValue() {
+	public Integer getValue() {
 		return value;
 	}
 

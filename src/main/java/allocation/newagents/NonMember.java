@@ -4,13 +4,17 @@ import uk.ac.imperial.presage2.core.util.random.Random;
 //import allocation.actions.Allocation;
 import allocation.facts.CommonPool;
 //import allocation.facts.Institution;
+import allocation.facts.RaMethod;
+import allocation.facts.Profile;
 
 public class NonMember extends Agent {
 
 
-	public NonMember(String name, double compliancyDegree, double initialCompliancyDegree,
-			double standardRequest, int pool) {
-		super(name, pool, compliancyDegree, initialCompliancyDegree, standardRequest);
+	public NonMember(String name, int id, double compliancyDegree, double initialCompliancyDegree,
+			double standardRequest, int pool, Profile profile, RaMethod justicePrAbundance,
+			RaMethod justicePrCrisis, int judgeSize, int judgeTolerance) {
+		super(name, id, pool, compliancyDegree, initialCompliancyDegree, standardRequest,
+				profile, justicePrAbundance, justicePrCrisis, judgeSize, judgeTolerance);
 	}
 
 	public NonMember(Member m) {

@@ -2,6 +2,7 @@ package allocation.newagents;
 
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
 import java.util.Set;
@@ -13,16 +14,19 @@ import allocation.actions.CallForVote;
 import allocation.actions.Demand;
 import allocation.facts.CommonPool;
 import allocation.facts.Institution;
+import allocation.facts.RaMethod;
+import allocation.facts.Profile;
 
 public class Head extends Member {
 
 	int monitoring = 0; //set in monitor() used in allocate()
 	int outMonitoring = 0;
 
-	public Head(String name, double compliancyDegree, double initialCompliancyDegree, double standardRequest, double noRequestPercentage,
-			double changeBehaviourPercentage, double improveBehaviour, int pool, int iid) {
-		super(name, compliancyDegree, initialCompliancyDegree, standardRequest, noRequestPercentage, 
-				changeBehaviourPercentage, improveBehaviour, pool, iid);
+	public Head(String name, int id, double compliancyDegree, double initialCompliancyDegree, double standardRequest, double noRequestPercentage,
+			double changeBehaviourPercentage, double improveBehaviour, int pool, int iid,
+			Profile profile, RaMethod justicePrAbundance, RaMethod justicePrCrisis, int judgeSize, int judgeTolerance) {
+		super(name, id, compliancyDegree, initialCompliancyDegree, standardRequest, noRequestPercentage, 
+				changeBehaviourPercentage, improveBehaviour, pool, iid, profile, justicePrAbundance, justicePrCrisis, judgeSize, judgeTolerance);
 	}
 
 	/**
@@ -36,8 +40,8 @@ public class Head extends Member {
 
 	public CallForVote callForVotes(Institution i) {
 		if (i.isPrinciple3()) {
-			// vote on ra method, not head
-			return new CallForVote(false, true);
+			// vote on (head, raMethod) could be chosen with a method
+			return new CallForVote(i.isVoteHead(), i.isVoteRaMethod());
 		} else {
 			return null;
 		}
@@ -54,52 +58,119 @@ public class Head extends Member {
 			//logger.info("Hilfeee, bankrupt!!");
 			return allocations;
 		}
-		switch (i.getAllocationMethod()) {
-		case QUEUE:
-			Collections.shuffle(demands);
-			Queue<Demand> demandQueue = i.getDemandQueue();
-			Set<String> alreadyDemanded = new HashSet<String>();
-			for (Demand d : demandQueue) {
-				alreadyDemanded.add(d.getAgent());
+		
+		if(i.isHeadDecides()==false){//use RaMethod that's been voted for or externally decided
+			switch (i.getAllocationMethod()) {
+			case QUEUE:
+				Collections.shuffle(demands);
+				Queue<Demand> demandQueue = i.getDemandQueue();
+				Set<String> alreadyDemanded = new HashSet<String>();
+				for (Demand d : demandQueue) {
+					alreadyDemanded.add(d.getAgent());
+				}
+				for (Demand d : demands) {
+					if (!alreadyDemanded.contains(d.getAgent()))
+						demandQueue.add(d);
+				}
+				int qSize = demandQueue.size();
+				System.out.println("Queue Q " + demandQueue );
+				int qCounter = 0; //loop through demandQueue only once
+				while (!demandQueue.isEmpty() && qCounter < qSize) {
+					qCounter ++;
+					if (level >= demandQueue.peek().getQuantity()) {
+						Demand d = demandQueue.poll();
+						allocations.add(new Allocation( d.getAgent(), i.getRound(),
+								d.getQuantity(), pool.getId()));
+						level -= d.getQuantity();
+					} else {
+						break;
+					}
+				}
+				break;
+			case RATION:
+				double fairshare = level/demands.size();
+				i.setFairshare(fairshare);//need that for later
+				Collections.shuffle(demands);
+				for (Demand d : demands) {
+					if (level >= d.getQuantity() || level >= fairshare){
+						if(d.getQuantity() > fairshare){
+							allocations.add(new Allocation(d.getAgent(), i.getRound(), 
+									fairshare, pool.getId()));
+							level -= fairshare;
+						}
+						else{
+							allocations.add(new Allocation(d.getAgent(), i.getRound(),
+									d.getQuantity(), pool.getId()));
+							level -= d.getQuantity();	
+						}
+					}
+					else{
+						break;
+					}
+				}
+				break;
+			default:
+				break;
+			}//end switch
+		
+		} else {//headDecides==true, even if head is set externally
+			RaMethod justicePr;
+			LinkedList<Demand> demandQueue = new LinkedList<Demand>();
+			if (level < 1.5 * i.getInitialAgents()* standardRequest / compliancyDegree) {//low resource
+				justicePr = justicePrCrisis;
+			} else {
+				justicePr = justicePrAbundance;
 			}
-			for (Demand d : demands) {
-				if (!alreadyDemanded.contains(d.getAgent()))
+			System.out.println("justicePr of head:  " + justicePr);
+			switch(justicePr){
+			case EQUITY:
+				Collections.shuffle(demands);
+				for (Demand d : demands){
+					if (d.getProfile()==Profile.MERITIOUS){
+						demandQueue.addFirst(d);
+					} else {
+						demandQueue.addLast(d);
+					}
+				}
+				System.out.println("Equity Q " + demandQueue );
+				break;
+				
+			case EQUALITY:
+				Collections.shuffle(demands);
+				for(Demand d : demands){
 					demandQueue.add(d);
-			}
-			while (!demandQueue.isEmpty()) {
+				}
+				System.out.println("Equality Q " + demandQueue );
+				break;
+			case NEED:
+				Collections.shuffle(demands);
+				for (Demand d : demands){
+					if (d.getProfile()==Profile.NEEDY){
+						demandQueue.addFirst(d);
+					} else {
+						demandQueue.addLast(d);
+					}
+				}
+				System.out.println("Need Q " + demandQueue );
+				break;
+			default:
+				break;			
+			}//end switch
+			int qSize = demandQueue.size();
+			int qCounter = 0; //loop through demandQueue only once
+			while (!demandQueue.isEmpty() && qCounter < qSize) {
+				qCounter ++;
 				if (level >= demandQueue.peek().getQuantity()) {
 					Demand d = demandQueue.poll();
 					allocations.add(new Allocation( d.getAgent(), i.getRound(),
-							d.getQuantity(), i.getPool()));
+							d.getQuantity(), pool.getId()));
 					level -= d.getQuantity();
 				} else {
 					break;
 				}
 			}
-			break;
-		case RATION:
-			double fairshare = level/demands.size();
-			i.setFairshare(fairshare);//need that for later
-			Collections.shuffle(demands);
-			for (Demand d : demands) {
-				if (level >= d.getQuantity() || level >= fairshare){
-					if(d.getQuantity() > fairshare){
-						allocations.add(new Allocation(d.getAgent(), i.getRound(), 
-								fairshare, i.getPool()));
-						level -= fairshare;
-					}
-					else{
-						allocations.add(new Allocation(d.getAgent(), i.getRound(),
-								d.getQuantity(), i.getPool()));
-						level -= d.getQuantity();	
-					}
-				}
-				else{
-					break;
-				}
-			}
-			break;
-		}//end switch
+			
+		}//end else
 		return allocations;
 	}
 

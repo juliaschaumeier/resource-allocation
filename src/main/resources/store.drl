@@ -91,5 +91,35 @@ rule "log whether institution is alive or dead" //for averaging purposes
 		sto.getSimulation().getEnvironment().setProperty("live institution", $t.intValue(), Integer.toString($institutions.size()));
 end
 		
+rule "log change of head"
+	salience -1000
+	ruleflow-group 'exclude'
+	when
+		Institution($iid : id, $round : round, $pool : pool)
+		HeadChange($name : agent, round == $round, institution == $iid)
+		Head(name == $name, $hid : id, institutionId == $iid)
+	then
+		logger.info("Head changed to " + $name);
+		//sto.getSimulation().getEnvironment().setProperty("new head", $round, Integer.toString($hid));
+		sto.getSimulation().getEnvironment().setProperty("new head", $round, Integer.toString(1));
+end
+	
 
+rule "display dropped heads"
+	salience -1000
+	ruleflow-group 'exclude'
+	when
+		Institution($iid : id, $round : round)
+		$m : Member(institutionId == $iid, $dh : droppedHeads)
+		//$dh : List() from accumulate ( Head($name : name, institutionId == $iid), collectList($name) )
+	then
+	//	String listString = "";
+	//	for (Object s : $dh){
+	 //   	listString += (String) s + ", ";
+	//	}
+		
+		logger.info("Dropped Heads by member " + $m.getName() + ": " + $dh);
+		//sto.getSimulation().getEnvironment().setProperty("new head", $round, Integer.toString($hid));
+		//sto.getSimulation().getEnvironment().setProperty("new head", $round, listString);
+end
 		
