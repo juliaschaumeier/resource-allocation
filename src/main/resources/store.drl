@@ -128,11 +128,18 @@ rule "list of dropped heads"
 	ruleflow-group 'exclude'
 	when 
 		Institution($iid : id, $round : round)
-		//$l : Number( ) from accumulate ( Member(institutionId == $iid, $dh : droppedHeads), sum($dh.size())) 
-		 $d1 : List( ) from accumulate ( Member(institutionId == $iid, $dh : droppedHeads), collectList($dh))
-		 $d2 : List( ) from accumulate ( Member(institutionId == $iid, $dh : droppedHeads), collectList($dh.size())) 
-		 $d3 : List( ) from accumulate ( Member(institutionId == $iid, $dh : droppedHeads.size()), collectList($dh)) 
+		//$l : Number( ) from accumulate ( $m : Member(institutionId == $iid), sum($m.getDroppedHeads().size())) 
+		//$d1 : List( ) from accumulate ( $m : Member(institutionId == $iid), collectList($m.getDroppedHeads()))
+		$l : List( ) from collect (Member(institutionId == $iid))
+		//$d2 : List( ) from accumulate ( $m : Member(institutionId == $iid), collectList($m.getDroppedHeads().size())) 
 	then
-		logger.info($d2 + " and " + $d3 + " heads List Size " + $d1);
-		//sto.getSimulation().getEnvironment().setProperty("headsListSize", $round, Integer.toString($l));
+		//logger.info($d2 + " heads List Size " + $d1);
+		//logger.info($d1.size() +"-"+ new ArrayList($d1).size());
+		int length = 0;
+		for (Object o : $l){
+			Member m = (Member) o;
+			length += m.getDroppedHeads().size();
+		}
+		logger.info($l.size() + " Members have " + length + " heads on lists.");
+		//sto.getSimulation().getEnvironment().setProperty("headsListSize", $round, Integer.toString(length));
 end
