@@ -118,8 +118,21 @@ rule "display dropped heads"
 	 //   	listString += (String) s + ", ";
 	//	}
 		
-		logger.info("Dropped Heads by member " + $m.getName() + ": " + $dh);
+		logger.info($dh.size() +  " dropped Heads by member " + $m.getName() + ": " + $dh);
 		//sto.getSimulation().getEnvironment().setProperty("new head", $round, Integer.toString($hid));
 		//sto.getSimulation().getEnvironment().setProperty("new head", $round, listString);
 end
-		
+
+rule "list of dropped heads"
+	salience -1000
+	ruleflow-group 'exclude'
+	when 
+		Institution($iid : id, $round : round)
+		//$l : Number( ) from accumulate ( Member(institutionId == $iid, $dh : droppedHeads), sum($dh.size())) 
+		 $d1 : List( ) from accumulate ( Member(institutionId == $iid, $dh : droppedHeads), collectList($dh))
+		 $d2 : List( ) from accumulate ( Member(institutionId == $iid, $dh : droppedHeads), collectList($dh.size())) 
+		 $d3 : List( ) from accumulate ( Member(institutionId == $iid, $dh : droppedHeads.size()), collectList($dh)) 
+	then
+		logger.info($d2 + " and " + $d3 + " heads List Size " + $d1);
+		//sto.getSimulation().getEnvironment().setProperty("headsListSize", $round, Integer.toString($l));
+end

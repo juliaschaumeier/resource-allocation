@@ -233,6 +233,7 @@ rule "Declare winner and update Ra method" //if votes equal, nothing happens;
 	when
 		$i : Institution( $iid : id, $round : round , principle3 == true )
 		$vc : VoteCount( ballot == "raMethod", round == $round, institution == $iid)
+		not (Declared(institution == $iid, ballot == "raMethod", round == $round))
 	then
 		Integer forQueue = $vc.result.get(RaMethod.QUEUE.ordinal());
 		Integer forRation = $vc.result.get(RaMethod.RATION.ordinal());
@@ -263,29 +264,38 @@ rule "Declare winner head" //if votes equal, nothing happens;
 	ruleflow-group 'vote'
 	when
 		$i : Institution( $iid : id, $round : round , principle3 == true )
+		Head($headId : id, institutionId == $iid)
 		$vc : VoteCount( ballot == "head", round == $round, institution == $iid)
+		not (Declared(institution == $iid, ballot == "head", round == $round))
 	then
 		Map<Integer, Integer> tally = $vc.result;
 		//if null is voted by more than half the members no new head is returned
 		if(tally.containsKey(null) && tally.get(null) > $i.instMembers.size()/2){
 				retract($i);
 				logger.info("ANARCHY, no head!!"); 
-		} else { //choose members from tally with highest counts, put on list
+		} else { //choose member-ids from tally with highest counts, put on list
 			tally.remove(null); //null counts not significant
-			Integer largestVal = null;
-			List<Entry<Integer, Integer>> largestList = new ArrayList<Entry<Integer, Integer>>();
-			for (Entry<Integer, Integer> j : tally.entrySet()){
-			     if (largestVal == null || largestVal  < j.getValue()){
-			         largestVal = j.getValue();
-			         largestList.clear();
-			         largestList.add(j);
-			     }else if (largestVal == j.getValue()){
-			         largestList.add(j);
-			     }
+			if(tally.containsKey($headId) && tally.get($headId) > $i.instMembers.size()/2){//head has more than half the votes (vote of confidence)
+				Integer hd = (Integer) $headId;
+				insert(new Declared( $iid, $vc.ballot, $vc.round, hd ));
+				logger.info("Head that won vote remains : " + hd);
+			}else{//head has under half the votes
+				tally.remove($headId);//head off list
+				Integer largestVal = null;
+				List<Entry<Integer, Integer>> largestList = new ArrayList<Entry<Integer, Integer>>();
+				for (Entry<Integer, Integer> j : tally.entrySet()){
+				     if (largestVal == null || largestVal  < j.getValue()){
+				         largestVal = j.getValue();
+				         largestList.clear();
+				         largestList.add(j);
+				     }else if (largestVal == j.getValue()){
+				         largestList.add(j);
+				     }
+				}
+				Integer hd = largestList.get(Random.randomInt(largestList.size())).getKey();
+				insert(new Declared( $iid, $vc.ballot, $vc.round, hd ));
+				logger.info("Head that won vote is : " + hd);
 			}
-			Integer hd = largestList.get(Random.randomInt(largestList.size())).getKey();
-			insert(new Declared( $iid, $vc.ballot, $vc.round, hd ));
-			logger.info("Head that won vote is : " + hd);
 		}
 end
 
@@ -473,7 +483,7 @@ rule "Members judge heads allocation"
 		$m.judgeHead($i, $pool, $head, $demands, $allocations);
 		insert( new TaskExecuted( $i, "judgeHead", $name, $round ) );
 		//logger.info("Comparison demand/allocation: " + $demands + $allocations);
-		logger.info("Heads in inst: " + $heads);
+		//logger.info("Heads in inst: " + $heads);
 end
 
 /* rule "Members judge heads allocation"
