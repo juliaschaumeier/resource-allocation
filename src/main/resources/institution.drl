@@ -483,6 +483,7 @@ end
 
 rule "Members judge heads allocation"
 	salience -100
+	no-loop
 	ruleflow-group "appropriate"
 	when
 		$i : Institution($iid : id, $pool : pool, $round : round, headDecides == true)
@@ -493,8 +494,10 @@ rule "Members judge heads allocation"
 		$allocations : List( ) from collect( Allocation(pool==$pool.id, round == $round, agent memberOf $acNames) )
 		not TaskExecuted( institution == $iid, task == "judgeHead", agent == $name, round == $round)
 		$heads : List() from collect (Head(institutionId == $iid))
-	then 
-		$m.judgeHead($i, $pool, $head, $demands, $allocations);
+	then
+		modify($m) {
+			judgeHead($i, $pool, $head, $demands, $allocations);
+		}
 		insert( new TaskExecuted( $i, "judgeHead", $name, $round ) );
 		//logger.info("Comparison demand/allocation: " + $demands + $allocations);
 		//logger.info("Heads in inst: " + $heads);
