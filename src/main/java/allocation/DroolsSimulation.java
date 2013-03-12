@@ -138,7 +138,7 @@ public class DroolsSimulation {
 		// create a single common pool
 		double initialLevel = 2 * sim.standardRequest * sim.agents;
 		CommonPool pool0 = new CommonPool(0, initialLevel, initialLevel,
-				sim.outAppropriationFrequency, sim.outImproveFrequency);
+				sim.outAppropriationFrequency, sim.outImproveFrequency, sim.refScheme);
 
 		// create a single institution governing the pool.
 		Institution i0 = new Institution(session, 0, sim.agents, pool0,
@@ -198,12 +198,14 @@ public class DroolsSimulation {
 			if (i==0){
 				a = new Head("elf " + i, i, comp, comp, sim.standardRequest,
 						sim.noRequestPercentage, sim.changeBehaviourPercentage,
-						sim.improveBehaviour, 0, 0, prof, prAbun, prCris, sim.judgeSize, sim.judgeTolerance);
+						sim.improveBehaviour, 0, 0, prof, prAbun, prCris, sim.judgeSize, sim.judgeTolerance,
+						sim.useSat, sim.initialSat, sim.leaveSat, sim.increaseSat, sim.decreaseSat);
 			}
 			else{
 				a = new Member("elf " + i, i, comp, comp, sim.standardRequest,
 						sim.noRequestPercentage, sim.changeBehaviourPercentage,
-						sim.improveBehaviour, 0, 0, prof, prAbun, prCris, sim.judgeSize, sim.judgeTolerance);
+						sim.improveBehaviour, 0, 0, prof, prAbun, prCris, sim.judgeSize, sim.judgeTolerance,
+						sim.useSat, sim.initialSat, sim.leaveSat, sim.increaseSat, sim.decreaseSat);
 			}
 			
 			

@@ -24,9 +24,11 @@ public class Head extends Member {
 
 	public Head(String name, int id, double compliancyDegree, double initialCompliancyDegree, double standardRequest, double noRequestPercentage,
 			double changeBehaviourPercentage, double improveBehaviour, int pool, int iid,
-			Profile profile, RaMethod justicePrAbundance, RaMethod justicePrCrisis, int judgeSize, int judgeTolerance) {
+			Profile profile, RaMethod justicePrAbundance, RaMethod justicePrCrisis, int judgeSize, int judgeTolerance,
+			boolean useSat, double initialSat, double leaveSat, double increaseSat, double decreaseSat) {
 		super(name, id, compliancyDegree, initialCompliancyDegree, standardRequest, noRequestPercentage, 
-				changeBehaviourPercentage, improveBehaviour, pool, iid, profile, justicePrAbundance, justicePrCrisis, judgeSize, judgeTolerance);
+				changeBehaviourPercentage, improveBehaviour, pool, iid, profile, justicePrAbundance, justicePrCrisis, 
+				judgeSize, judgeTolerance, useSat, initialSat, leaveSat, increaseSat, decreaseSat );
 	}
 
 	/**

@@ -22,6 +22,7 @@ import uk.ac.imperial.presage2.core.simulator.EndOfTimeCycle;
 import uk.ac.imperial.presage2.core.simulator.InjectedSimulation;
 import uk.ac.imperial.presage2.core.simulator.Parameter;
 import uk.ac.imperial.presage2.core.simulator.Scenario;
+import allocation.facts.RefillScheme;
 import allocation.facts.Institution;
 
 import com.google.inject.AbstractModule;
@@ -123,6 +124,20 @@ public class Simulation extends InjectedSimulation {
 	public int judgeSize = 10; //poll size (of all members) for judging fair head
 	@Parameter(name = "judgeTolerance", optional = true)
 	public int judgeTolerance = 1;
+	
+	@Parameter(name ="useSat", optional = true)
+	public boolean useSat = false;
+	@Parameter(name ="initialSat", optional = true)
+	public double initialSat = 1.0;
+	@Parameter(name ="leaveSat", optional = true)
+	public double leaveSat = 0.5;
+	@Parameter(name ="increaseSat", optional = true)
+	public double increaseSat = 0.1;
+	@Parameter(name ="decreaseSat", optional = true)
+	public double decreaseSat = 0.51;
+	
+	@Parameter(name = "refScheme", optional = true)
+	public RefillScheme refScheme = RefillScheme.CUSTOM;
 
 	Set<Institution> institutions = new HashSet<Institution>();
 

@@ -118,7 +118,7 @@ rule "display dropped heads"
 	 //   	listString += (String) s + ", ";
 	//	}
 		
-		logger.info($dh.size() +  " dropped Heads by member " + $m.getName() + ": " + $dh);
+		logger.info($dh.size() +  " dropped Heads by member " + $m.getName() + "(Sat=" + $m.getSatisfaction() + "): " + $dh);
 		//sto.getSimulation().getEnvironment().setProperty("new head", $round, Integer.toString($hid));
 		//sto.getSimulation().getEnvironment().setProperty("new head", $round, listString);
 end
@@ -141,5 +141,5 @@ rule "list of dropped heads"
 			length += m.getDroppedHeads().size();
 		}
 		logger.info($l.size() + " Members have " + length + " heads on lists.");
-		//sto.getSimulation().getEnvironment().setProperty("headsListSize", $round, Integer.toString(length));
+		sto.getSimulation().getEnvironment().setProperty("headsListSize", $round, Integer.toString(length));
 end

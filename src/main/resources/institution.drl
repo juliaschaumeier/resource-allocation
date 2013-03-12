@@ -52,7 +52,7 @@ declare Appealed
 end
 
 declare HeadChange
-	agent : String //name of head
+	agent : String //name of new head
 	round : int
 	institution : int
 end
@@ -200,6 +200,7 @@ rule "External assignment of Head"
 		Member m = (Member) $members.get(Random.randomInt($members.size()));
 		retract(m); //drools will treat head as member
 		insert(new Head(m));
+		insert(new HeadChange(m.getName(), $r, $iid ));//for satisfaction update
 		logger.info("Head  for institution "+ $iid +" externally set to "+ m);	
 end
 
@@ -318,6 +319,19 @@ rule "Update winner head"
 		insert(new HeadChange($m.getName(), $round, $iid ));
 		
 end
+
+rule "Update member satisfaction if head changes" //also if set externally
+	ruleflow-group 'vote'
+	no-loop
+	when
+		Institution( $iid : id, $round : round )
+		HeadChange( institution == $iid, round == $round )
+		$m : Member( institutionId == $iid, useSat == true )
+	then
+		modify($m){
+			setSatisfaction( $m.getInitialSat() );
+		}
+end
 	
 rule "Member Demands"
 	salience 1000
@@ -389,7 +403,7 @@ rule "Member appropriation - no allocation" //what principle active see member.a
 			setResourceLevel( $pool.getResourceLevel() - appropriatedAmount )
 		}
 		logger.info(app);
-		logger.info($pool);
+		//logger.info($pool);
 end
 
 rule "Member appropriation - allocated"
@@ -448,15 +462,15 @@ end
 //			$v : Vote( $voter : voter, round == $round, ballot == $b ) and 
 //			Member( name == $voter, institutionId == $iid ) , collectList($v) )
 
-rule "Members select agents for head judgment"
+rule "Members select agents for head judgment"//test every head for members on satisfaction evaluation scheme
 	salience -100
 	ruleflow-group "appropriate"
 	when
 		$i : Institution($iid : id, $round : round, headDecides == true)
 		$head : Head(institutionId == $iid)
-		$m : Member(institutionId == $iid, $name : name, $head.name not memberOf droppedHeads)
-		//$mem : Member(institutionId == $iid, $n : name, active == true)
-		//$acNames : List() from collect( $n )
+		(	$m : Member(institutionId == $iid, $name : name, $head.name not memberOf droppedHeads, useSat == false)
+		or
+			$m : Member(institutionId == $iid, $name : name, useSat == true)	)
 		$acNames : List () from accumulate(Member(institutionId == $iid, $n : name, active == true), collectList($n))
 		not JudgeList(agent == $name, round == $round, institution == $iid)
 	then  
@@ -486,57 +500,6 @@ rule "Members judge heads allocation"
 		//logger.info("Heads in inst: " + $heads);
 end
 
-/* rule "Members judge heads allocation"
-	ruleflow-group "appropriate"
-	no-loop
-	when
-		$i : Institution($iid : id, $pool : pool, $round : round)
-		$m : Member(institutionId == $iid)
-		$head : Head(institutionId == $iid)
-		$demands : List( ) from collect( Demand( pool == $pool.id, round == $round ) )
-		$allocations : List( ) from collect( Allocation(pool==$pool.id, round == $round) )
-	then  
-		//random list of demands with length judgeSize
-		logger.info($demands);
-		//List demnds = $demands;
-		while($demands.size()>$m.getJudgeSize()){
-			$demands.remove(Random.randomInt($demands.size()));
-		}
-		
-		Boolean ex = false;
-		while($allocations.listIterator.hasNext()){
-			Allocation a = $allocations.listIterator.next();
-			//if allocation is not a demand, remove with $allocations.listIterator.remove();
-			for (Object p : $demands){
-				Demand d = (Demand) p;
-				if(a.getAgent()==d.getAgent()){
-					ex = true;
-				}
-			}
-			if (ex==true){
-				$allocations.listIterator.remove();
-				ex=false;
-			}
-		}
-		
-	//	 List<Allocation> alloc = new List<Allocation>();
-	//	for(Object o : $allocations){
-	//		Allocation a = (Allocation) o;
-	//		for (Object p : $demands){
-	//			Demand d = (Demand) p;
-	//			if(a.getAgent()==d.getAgent()){
-	//				alloc.add(a);
-	//			}
-	//		}
-	//	} 
-		//alloc = List() from accumulate (
-		//Allocation(pool == $pool.id, round == $round, $ag : agent);
-		//$d : Demand(pool == $pool.id, round == $round, agent == $ag);	
-		//$demands.contains($d))
-		$m.judgeHead($i, $pool, $head, $demands, $allocations);
-		logger.info($demands);
-end */
-	
 
 rule "Sanctioning monitored members (first time or no graduated sanctions)" //not very important that it's the monitor/head
 	ruleflow-group "report"
@@ -719,6 +682,21 @@ rule "member back after sanction" //member inactive -> member active (Pr4/5)
 			logger.info("Back in: "+ $member);
 		}
 end
+
+rule "members leave due to dissatisfaction" //head wouldn't leave!
+	ruleflow-group "exclude"
+	salience 100 //before head could be excluded; might as well be in appeal??
+	no-loop
+	when
+		$i : Institution($iid : id, $round : round)
+		$head : Head(institutionId == $iid, $hdname : name)
+		$member: Member(name != $hdname, institutionId == $iid, useSat == true, getSatisfaction() < getLeaveSat())
+	then
+		retract($member);
+		insert(new NonMember($member));
+		logger.info("Left dissatisfied "+ $member);
+end
+		
 
 rule "assign new head" //so far, head also governs if inactive!!
 	ruleflow-group "exclude"

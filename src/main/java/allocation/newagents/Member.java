@@ -24,12 +24,20 @@ public class Member extends Agent {
 	final double improveBehaviour;
 	List<String> droppedHeads; //remembers list when becomes Head, doesn't when it becomes nonMember
 	
+	double satisfaction; //remembers satisfaction when becomes Head, doesn't when it becomes nonMember
+	final boolean useSat;
+	final double initialSat;
+	final double leaveSat;
+	final double increaseSat;
+	final double decreaseSat;
+
 	double demand = 0;
 
 	public Member(String name, int id, double compliancyDegree, double initialCompliancyDegree,
 			double standardRequest, double noRequestPercentage, double changeBehaviourPercentage,
 			double improveBehaviour, int pool, int iid, Profile profile, 
-			RaMethod justicePrAbundance, RaMethod justicePrCrisis, int judgeSize, int judgeTolerance) {
+			RaMethod justicePrAbundance, RaMethod justicePrCrisis, int judgeSize, int judgeTolerance,
+			boolean useSat, double initialSat, double leaveSat, double increaseSat, double decreaseSat ) {
 		super(name, id, pool, compliancyDegree, initialCompliancyDegree, standardRequest,
 				profile, justicePrAbundance, justicePrCrisis, judgeSize, judgeTolerance);
 		this.preferredRequest = standardRequest * compliancyDegree
@@ -39,6 +47,13 @@ public class Member extends Agent {
 		this.improveBehaviour = improveBehaviour;
 		this.institutionId = iid;
 		this.droppedHeads = new ArrayList<String>();
+		this.satisfaction = initialSat;
+		this.useSat = useSat;
+		this.initialSat = initialSat;
+		this.leaveSat = leaveSat;
+		this.increaseSat = increaseSat;
+		this.decreaseSat = decreaseSat;
+		
 	}
 
 	/**
@@ -54,6 +69,12 @@ public class Member extends Agent {
 		this.changeBehaviourPercentage = m.changeBehaviourPercentage;
 		this.improveBehaviour = m.improveBehaviour;
 		this.droppedHeads = m.droppedHeads;
+		this.satisfaction = m.initialSat;
+		this.useSat = m.useSat;
+		this.initialSat = m.initialSat;
+		this.leaveSat = m.leaveSat;
+		this.increaseSat = m.increaseSat;
+		this.decreaseSat = m.decreaseSat;
 	}
 
 	/**
@@ -62,7 +83,8 @@ public class Member extends Agent {
 	 * @param nm
 	 * @param iid
 	 */
-	public Member(NonMember nm, int iid, double noRequestPercentage, double changeBehaviourPercentage, double improveBehaviour) {
+	public Member(NonMember nm, int iid, double noRequestPercentage, double changeBehaviourPercentage, double improveBehaviour,
+			boolean useSat, double initialSat, double leaveSat,  double increaseSat, double decreaseSat) {
 		super(nm);
 		this.preferredRequest = standardRequest * compliancyDegree
 				* (1 + (0.2 * Random.randomDouble() - 0.1));
@@ -71,6 +93,12 @@ public class Member extends Agent {
 		this.changeBehaviourPercentage = changeBehaviourPercentage;
 		this.improveBehaviour = improveBehaviour;
 		this.droppedHeads = new ArrayList<String>(); 
+		this.satisfaction = initialSat;
+		this.useSat = useSat;
+		this.initialSat = initialSat;
+		this.leaveSat = leaveSat;
+		this.increaseSat = increaseSat;
+		this.decreaseSat = decreaseSat;
 	}
 	
 
@@ -262,7 +290,7 @@ public class Member extends Agent {
 			}
 			
 		}
-//		System.out.println("Before: ha " + helpalloc + ", mD=" + meritiousDem + ", nD=" + needyDem + ", mA=" + meritiousAll + ", nA=" + needyAll + ", justicePr=" + justicePr );
+		System.out.println("Before: ha " + helpalloc + ", mD=" + meritiousDem + ", nD=" + needyDem + ", mA=" + meritiousAll + ", nA=" + needyAll + ", justicePr=" + justicePr );
 		switch (justicePr){
 		case EQUITY:
 			//how many should get allocated with this agent's profile
@@ -297,25 +325,34 @@ public class Member extends Agent {
 		default:
 			break;
 		}//end of switch
-		
-/*		if (justicePr == RaMethod.EQUALITY){
-			int judgeTol = judgeTolerance - 1;
-		} else {
-			int judgeTol = judgeTolerance;
-		}*/
+
 //		System.out.println("after: ha " + helpalloc + ", mD=" + meritiousDem + ", nD=" + needyDem + ", mA=" + meritiousAll + ", nA=" + needyAll );
 		//test whether allocation within tolerance range of demand(=agent's allocation)
 		if (meritiousAll < meritiousDem - judgeTolerance || meritiousAll > meritiousDem + judgeTolerance){
-			droppedHeads.add(head.getName());//can do I that although head not a member fact??
-			//System.out.println("after: ha " + helpalloc + ", mD=" + meritiousDem + ", nD=" + needyDem + ", mA=" + meritiousAll + ", nA=" + needyAll );
+			if(!droppedHeads.contains(head.getName())){//with useSat tests head in every timestep
+				droppedHeads.add(head.getName());
+			}
+			if(useSat){//head naughty, satisfaction decreases
+				satisfaction -= satisfaction*decreaseSat;
+			}
+			
+			System.out.println("after: ha " + helpalloc + ", mD=" + meritiousDem + ", nD=" + needyDem + ", mA=" + meritiousAll + ", nA=" + needyAll );
 			System.out.println("naughty head (m)" + head.getName() + head.profile + " by member [" + name + "]" + profile );
 			return;
 		} else if (needyAll < needyDem - judgeTolerance || needyAll > needyDem + judgeTolerance){
-			droppedHeads.add(head.getName());
+			if(!droppedHeads.contains(head.getName())){
+				droppedHeads.add(head.getName());
+			}
+			if(useSat){//head naughty, satisfaction decreases
+				satisfaction -= satisfaction*decreaseSat;
+			}
 			System.out.println("naughty head (n)" + head.getName() + head.profile + " by member [" + name + "]" + profile );
-			//System.out.println("after: ha " + helpalloc + ", mD=" + meritiousDem + ", nD=" + needyDem + ", mA=" + meritiousAll + ", nA=" + needyAll );
+			System.out.println("after: ha " + helpalloc + ", mD=" + meritiousDem + ", nD=" + needyDem + ", mA=" + meritiousAll + ", nA=" + needyAll );
 			return;
 		} else {
+			if(useSat){//head nice, satisfaction increases
+				satisfaction += (1-satisfaction)*increaseSat;
+			}
 			return;
 		}
 		
@@ -334,6 +371,33 @@ public class Member extends Agent {
 		return droppedHeads;
 	}
 	
-	
+	public double getSatisfaction() {
+		return satisfaction;
+	}
 
+	public void setSatisfaction(double satisfaction) {
+		this.satisfaction = satisfaction;
+	}
+
+	public boolean isUseSat() {
+		return useSat;
+	}
+
+	public double getInitialSat() {
+		return initialSat;
+	}
+
+	public double getLeaveSat() {
+		return leaveSat;
+	}
+
+	public double getIncreaseSat() {
+		return increaseSat;
+	}
+
+	public double getDecreaseSat() {
+		return decreaseSat;
+	}
+	
+	
 }

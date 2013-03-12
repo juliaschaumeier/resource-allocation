@@ -31,14 +31,14 @@ rule "Max level" // Given an overfilled CommonPool, reset resource level to maxi
 		logger.info("Pool was overfilled, resetting to max level");
 end
 
-rule "Refill pool"
+rule "Refill pool - CUSTOM scheme"
 	salience -10
 	ruleflow-group 'init'
 	when
 		// when a new round occurs
 		$t : IntegerTime() 
 		// and there is a pool which has not been filled in this round
-		$pool : CommonPool( $t.intValue() > getLastFilled())
+		$pool : CommonPool( $t.intValue() > getLastFilled(), getRefScheme() == RefillScheme.CUSTOM)
 		// and the institution governing this pool is in the 'Exclude' phase
 		Institution( pool == $pool )
 	then // refill pool
