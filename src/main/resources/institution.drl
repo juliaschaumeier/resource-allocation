@@ -206,7 +206,7 @@ rule "External assignment of Head"
 	when
 		$i : Institution( $iid : id, $pool : pool, $r : round, round % samplingrateHead == 0, voteHead == false)
 		$h : Head(institutionId == $iid)
-		$members : List( size > 0 ) from collect( Member( institutionId == $iid) )
+		$members : List( size > 0 ) from collect( Member( institutionId == $iid, name != $h.name ) )
 		not (exists HeadChange(institution == $iid, round == $r))
 	then
 		//head to member
