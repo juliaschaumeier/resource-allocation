@@ -77,6 +77,29 @@ rule "Refill pool - CUSTOM scheme"
 		logger.info("Fill resource by "+ fillAmount +", pool resource level is "+ $pool.getResourceLevel());
 end
 
+rule "Refill pool - MEMBER scheme"
+	salience -10
+	ruleflow-group 'init'
+	when
+		// when a new round occurs
+		$t : IntegerTime() 
+		// and there is a pool which has not been filled in this round
+		$pool : CommonPool( $t.intValue() > getLastFilled(), getRefScheme() == RefillScheme.MEMBER)
+		$i : Institution($iid : id, pool == $pool, $count : activeMemberCount)
+		$head : Head(institutionId == $iid, $req : standardRequest)
+		// and the institution governing this pool is in the 'Exclude' phase
+	then // refill pool
+		double fillAmount = 0.80 * $count * $req; // percentage of active agents that gets resource
+		int time = $t.intValue();
+		double fill = $pool.getResourceLevel() + fillAmount;
+		modify($pool) {
+			setResourceLevel(fill),
+			setStartResourceLevel(fill),
+			setLastFilled( time )
+		}
+		logger.info("Fill resource with MEMBER scheme by "+ fillAmount +", pool resource level is "+ $pool.getResourceLevel());
+end
+
 rule "NonMember appropriation"
 	salience 1000
 	ruleflow-group "appropriate"

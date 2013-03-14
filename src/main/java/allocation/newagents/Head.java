@@ -25,10 +25,11 @@ public class Head extends Member {
 	public Head(String name, int id, double compliancyDegree, double initialCompliancyDegree, double standardRequest, double noRequestPercentage,
 			double changeBehaviourPercentage, double improveBehaviour, int pool, int iid,
 			Profile profile, RaMethod justicePrAbundance, RaMethod justicePrCrisis, int judgeSize, int judgeTolerance,
-			boolean useSat, double initialSat, double leaveSat, double increaseSat, double decreaseSat) {
+			boolean useSat, double initialSat, double leaveSat, double increaseSat, double decreaseSat,
+			boolean principle5Sat, double graduatedSat) {
 		super(name, id, compliancyDegree, initialCompliancyDegree, standardRequest, noRequestPercentage, 
 				changeBehaviourPercentage, improveBehaviour, pool, iid, profile, justicePrAbundance, justicePrCrisis, 
-				judgeSize, judgeTolerance, useSat, initialSat, leaveSat, increaseSat, decreaseSat );
+				judgeSize, judgeTolerance, useSat, initialSat, leaveSat, increaseSat, decreaseSat, principle5Sat, graduatedSat );
 	}
 
 	/**
@@ -128,7 +129,7 @@ public class Head extends Member {
 			case EQUITY:
 				Collections.shuffle(demands);
 				for (Demand d : demands){
-					if (d.getProfile()==Profile.MERITIOUS){
+					if (d.getProfile()==Profile.MERITORIOUS){
 						demandQueue.addFirst(d);
 					} else {
 						demandQueue.addLast(d);

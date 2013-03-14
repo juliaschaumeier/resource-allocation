@@ -96,12 +96,13 @@ rule "log change of head"
 	ruleflow-group 'exclude'
 	when
 		Institution($iid : id, $round : round, $pool : pool)
-		HeadChange($name : agent, round == $round, institution == $iid)
-		Head(name == $name, $hid : id, institutionId == $iid)
+		$hc : List() from collect ( HeadChange(round == $round, institution == $iid) )
+		//HeadChange($name : agent, round == $round, institution == $iid)
+		//Head(name == $name, institutionId == $iid)
 	then
-		logger.info("Head changed to " + $name);
+		logger.info("Head changed to " + $hc);
 		//sto.getSimulation().getEnvironment().setProperty("new head", $round, Integer.toString($hid));
-		sto.getSimulation().getEnvironment().setProperty("new head", $round, Integer.toString(1));
+		sto.getSimulation().getEnvironment().setProperty("new head", $round, Integer.toString($hc.size()));
 end
 	
 

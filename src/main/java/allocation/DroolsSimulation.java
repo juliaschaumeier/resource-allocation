@@ -28,6 +28,7 @@ import allocation.facts.CommonPool;
 import allocation.facts.Institution;
 import allocation.facts.RaMethod;
 import allocation.facts.Profile;
+import allocation.facts.RefillScheme;
 import allocation.newagents.Head;
 import allocation.newagents.Member;
 import allocation.newagents.NonMember;
@@ -137,8 +138,10 @@ public class DroolsSimulation {
 		Time t = new IntegerTime();
 		// create a single common pool
 		double initialLevel = 2 * sim.standardRequest * sim.agents;
+		// http://stackoverflow.com/questions/604424/java-convert-string-to-enum
+		//RefillScheme rScheme = Enum.valueOf(RefillScheme, sim.refScheme.trim().toUpperCase());
 		CommonPool pool0 = new CommonPool(0, initialLevel, initialLevel,
-				sim.outAppropriationFrequency, sim.outImproveFrequency, sim.refScheme);
+				sim.outAppropriationFrequency, sim.outImproveFrequency, RefillScheme.valueOf(sim.refScheme));
 
 		// create a single institution governing the pool.
 		Institution i0 = new Institution(session, 0, sim.agents, pool0,
@@ -190,7 +193,7 @@ public class DroolsSimulation {
 			}
 			//set agent Profiles
 			if (Random.randomDouble() < sim.profilePercentage){
-				prof = Profile.MERITIOUS;
+				prof = Profile.MERITORIOUS;
 			} else {
 				prof = Profile.NEEDY;
 			}
@@ -199,13 +202,15 @@ public class DroolsSimulation {
 				a = new Head("elf " + i, i, comp, comp, sim.standardRequest,
 						sim.noRequestPercentage, sim.changeBehaviourPercentage,
 						sim.improveBehaviour, 0, 0, prof, prAbun, prCris, sim.judgeSize, sim.judgeTolerance,
-						sim.useSat, sim.initialSat, sim.leaveSat, sim.increaseSat, sim.decreaseSat);
+						sim.useSat, sim.initialSat, sim.leaveSat, sim.increaseSat, sim.decreaseSat,
+						sim.principle5Sat, sim.graduatedSat);
 			}
 			else{
 				a = new Member("elf " + i, i, comp, comp, sim.standardRequest,
 						sim.noRequestPercentage, sim.changeBehaviourPercentage,
 						sim.improveBehaviour, 0, 0, prof, prAbun, prCris, sim.judgeSize, sim.judgeTolerance,
-						sim.useSat, sim.initialSat, sim.leaveSat, sim.increaseSat, sim.decreaseSat);
+						sim.useSat, sim.initialSat, sim.leaveSat, sim.increaseSat, sim.decreaseSat,
+						sim.principle5Sat, sim.graduatedSat);
 			}
 			
 			
@@ -244,7 +249,7 @@ public class DroolsSimulation {
 			}
 			//set agent Profiles
 			if (Random.randomDouble() < sim.profilePercentage){
-				prof = Profile.MERITIOUS;
+				prof = Profile.MERITORIOUS;
 			} else {
 				prof = Profile.NEEDY;
 			}

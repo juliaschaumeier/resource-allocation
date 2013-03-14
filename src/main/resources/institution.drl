@@ -70,6 +70,21 @@ rule "Increment round"
 		}
 end
 
+rule "assign new head" //so far, head also governs if inactive!!
+	ruleflow-group "init"
+	salience 500
+	when
+		Institution($iid : id, $round : round)
+		not( exists( Head(institutionId == $iid)))
+		$members : List( size > 0 ) from collect( Member( institutionId == $iid) )
+	then
+		Member m = (Member) $members.get(Random.randomInt($members.size()));
+		retract(m); //drools will treat head as member
+		insert(new Head(m));
+		insert(new HeadChange(m.getName(), $round, $iid ));//for satisfaction update
+		logger.info("New Head "+ m);
+end
+
 rule "Create Member List and Head" // not yet needed
 	ruleflow-group 'init'
 	no-loop
@@ -192,6 +207,7 @@ rule "External assignment of Head"
 		$i : Institution( $iid : id, $pool : pool, $r : round, round % samplingrateHead == 0, voteHead == false)
 		$h : Head(institutionId == $iid)
 		$members : List( size > 0 ) from collect( Member( institutionId == $iid) )
+		not (exists HeadChange(institution == $iid, round == $r))
 	then
 		//head to member
 		retract($h);
@@ -643,6 +659,20 @@ rule "Members appeal after recent sanction"
 		logger.info(appeal);
 end */
 
+rule "members leave due to dissatisfaction" //head wouldn't leave!
+	ruleflow-group "exclude"
+	salience 100 //before head could be excluded; might as well be in appeal??
+	no-loop
+	when
+		$i : Institution($iid : id, $round : round)
+		$head : Head(institutionId == $iid, $hdname : name)
+		$member: Member(name != $hdname, institutionId == $iid, useSat == true, getSatisfaction() < getLeaveSat())
+	then
+		retract($member);
+		insert(new NonMember($member));
+		logger.info("Left dissatisfied "+ $member);
+end
+
 rule "member exclusion"//member inactive -> nonmember active
 	ruleflow-group "exclude"
 	when
@@ -685,31 +715,4 @@ rule "member back after sanction" //member inactive -> member active (Pr4/5)
 			logger.info("Back in: "+ $member);
 		}
 end
-
-rule "members leave due to dissatisfaction" //head wouldn't leave!
-	ruleflow-group "exclude"
-	salience 100 //before head could be excluded; might as well be in appeal??
-	no-loop
-	when
-		$i : Institution($iid : id, $round : round)
-		$head : Head(institutionId == $iid, $hdname : name)
-		$member: Member(name != $hdname, institutionId == $iid, useSat == true, getSatisfaction() < getLeaveSat())
-	then
-		retract($member);
-		insert(new NonMember($member));
-		logger.info("Left dissatisfied "+ $member);
-end
-		
-
-rule "assign new head" //so far, head also governs if inactive!!
-	ruleflow-group "exclude"
-	when
-		Institution($iid : id, $round : round)
-		not( exists( Head(institutionId == $iid)))
-		$members : List( size > 0 ) from collect( Member( institutionId == $iid) )
-	then
-		Member m = (Member) $members.get(Random.randomInt($members.size()));
-		retract(m); //drools will treat head as member
-		insert(new Head(m));
-		logger.info("New Head "+ m);
-end
+	

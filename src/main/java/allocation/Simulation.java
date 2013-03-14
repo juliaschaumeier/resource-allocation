@@ -118,12 +118,12 @@ public class Simulation extends InjectedSimulation {
 	public double justicePrTransition2 = 0.75; //equality->need
 	
 	@Parameter(name = "profilePercentage", optional = true)
-	public double profilePercentage = 0.5; //meritious, needy is rest of 1
+	public double profilePercentage = 0.5; //meritorious, needy is rest of 1
 	
 	@Parameter(name = "judgeSize", optional = true)
 	public int judgeSize = 10; //poll size (of all members) for judging fair head
 	@Parameter(name = "judgeTolerance", optional = true)
-	public int judgeTolerance = 1;
+	public int judgeTolerance = 2;
 	
 	@Parameter(name ="useSat", optional = true)
 	public boolean useSat = false;
@@ -134,10 +134,16 @@ public class Simulation extends InjectedSimulation {
 	@Parameter(name ="increaseSat", optional = true)
 	public double increaseSat = 0.1;
 	@Parameter(name ="decreaseSat", optional = true)
-	public double decreaseSat = 0.51;
+	public double decreaseSat = 0.25;
+	
+	@Parameter(name ="priciple5Sat", optional = true)
+	public boolean principle5Sat = false;
+	@Parameter(name="graduatedSat", optional = true)
+	public double graduatedSat = 0.6; //3 increases between 2 decreases ok (at start)
 	
 	@Parameter(name = "refScheme", optional = true)
-	public RefillScheme refScheme = RefillScheme.CUSTOM;
+	public String refScheme = "CUSTOM";
+	
 
 	Set<Institution> institutions = new HashSet<Institution>();
 

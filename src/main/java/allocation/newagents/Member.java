@@ -30,6 +30,8 @@ public class Member extends Agent {
 	final double leaveSat;
 	final double increaseSat;
 	final double decreaseSat;
+	final boolean principle5Sat;
+	final double graduatedSat;
 
 	double demand = 0;
 
@@ -37,7 +39,8 @@ public class Member extends Agent {
 			double standardRequest, double noRequestPercentage, double changeBehaviourPercentage,
 			double improveBehaviour, int pool, int iid, Profile profile, 
 			RaMethod justicePrAbundance, RaMethod justicePrCrisis, int judgeSize, int judgeTolerance,
-			boolean useSat, double initialSat, double leaveSat, double increaseSat, double decreaseSat ) {
+			boolean useSat, double initialSat, double leaveSat, double increaseSat, double decreaseSat,
+			boolean principle5Sat, double graduatedSat) {
 		super(name, id, pool, compliancyDegree, initialCompliancyDegree, standardRequest,
 				profile, justicePrAbundance, justicePrCrisis, judgeSize, judgeTolerance);
 		this.preferredRequest = standardRequest * compliancyDegree
@@ -53,6 +56,8 @@ public class Member extends Agent {
 		this.leaveSat = leaveSat;
 		this.increaseSat = increaseSat;
 		this.decreaseSat = decreaseSat;
+		this.principle5Sat = principle5Sat;
+		this.graduatedSat = graduatedSat;
 		
 	}
 
@@ -75,6 +80,8 @@ public class Member extends Agent {
 		this.leaveSat = m.leaveSat;
 		this.increaseSat = m.increaseSat;
 		this.decreaseSat = m.decreaseSat;
+		this.principle5Sat = m.principle5Sat;
+		this.graduatedSat = m.graduatedSat;
 	}
 
 	/**
@@ -84,7 +91,8 @@ public class Member extends Agent {
 	 * @param iid
 	 */
 	public Member(NonMember nm, int iid, double noRequestPercentage, double changeBehaviourPercentage, double improveBehaviour,
-			boolean useSat, double initialSat, double leaveSat,  double increaseSat, double decreaseSat) {
+			boolean useSat, double initialSat, double leaveSat,  double increaseSat, double decreaseSat,
+			boolean principle5Sat, double graduatedSat) {
 		super(nm);
 		this.preferredRequest = standardRequest * compliancyDegree
 				* (1 + (0.2 * Random.randomDouble() - 0.1));
@@ -99,6 +107,8 @@ public class Member extends Agent {
 		this.leaveSat = leaveSat;
 		this.increaseSat = increaseSat;
 		this.decreaseSat = decreaseSat;
+		this.principle5Sat = principle5Sat;
+		this.graduatedSat = graduatedSat;
 	}
 	
 
@@ -268,9 +278,9 @@ public class Member extends Agent {
 		}
 		//how many agents can get allocated roughly:
 		int helpalloc = (int) ((pool.getStartResourceLevel()/standardRequest)*((double) judgeSize)/i.getInitialAgents()); //=floor
-		int meritiousDem = 0;
+		int meritoriousDem = 0;
 		int needyDem = 0;
-		int meritiousAll = 0;
+		int meritoriousAll = 0;
 		int needyAll = 0;
 		for (Demand d : demands){
 			if (d.getProfile()== Profile.NEEDY){
@@ -280,74 +290,75 @@ public class Member extends Agent {
 						needyAll ++;
 					}
 				}
-			} else { //profile==MERITIOUS
-				meritiousDem ++;
+			} else { //profile==MERITORIOUS
+				meritoriousDem ++;
 				for (Allocation a : allocations){
 					if (d.getAgent()==a.getAgent()){
-						meritiousAll ++;
+						meritoriousAll ++;
 					}
 				}
 			}
 			
 		}
-		System.out.println("Before: ha " + helpalloc + ", mD=" + meritiousDem + ", nD=" + needyDem + ", mA=" + meritiousAll + ", nA=" + needyAll + ", justicePr=" + justicePr );
+		System.out.println("Before: ha " + helpalloc + ", mD=" + meritoriousDem + ", nD=" + needyDem + ", mA=" + meritoriousAll + ", nA=" + needyAll + ", justicePr=" + justicePr );
 		switch (justicePr){
 		case EQUITY:
 			//how many should get allocated with this agent's profile
-			if(helpalloc > meritiousDem){
-				if(helpalloc-meritiousDem < needyDem){
-					needyDem = helpalloc-meritiousDem;
+			if(helpalloc > meritoriousDem){
+				if(helpalloc-meritoriousDem < needyDem){
+					needyDem = helpalloc-meritoriousDem;
 				}//else both fully allocated
 			} else {
-				meritiousDem = helpalloc;
+				meritoriousDem = helpalloc;
 				needyDem = 0;
 			}
 			break;
 		case EQUALITY:
 			//allocate according to percentage demands wrt both groups
-			double demSum = (double) needyDem + meritiousDem;
+			double demSum = (double) needyDem + meritoriousDem;
 			if(helpalloc < demSum){//not enough resource to go round
 				needyDem = (int) (helpalloc*needyDem/demSum + 0.5); //0.5 for rounding
-				meritiousDem = helpalloc - needyDem; //(int) (helpalloc*meritiousDem/demSum + 0.5);
+				meritoriousDem = helpalloc - needyDem; //(int) (helpalloc*meritoriousDem/demSum + 0.5);
 			}//else fully allocated
 			break;
 		case NEED:
 			//how many should get allocated with this agent's profile
 			if(helpalloc > needyDem){
-				if(helpalloc-needyDem < meritiousDem){
-					meritiousDem = helpalloc-needyDem;
+				if(helpalloc-needyDem < meritoriousDem){
+					meritoriousDem = helpalloc-needyDem;
 				}//else both fully allocated
 			} else {
 				needyDem = helpalloc;
-				meritiousDem = 0;
+				meritoriousDem = 0;
 			}
 			break;
 		default:
 			break;
 		}//end of switch
 
-//		System.out.println("after: ha " + helpalloc + ", mD=" + meritiousDem + ", nD=" + needyDem + ", mA=" + meritiousAll + ", nA=" + needyAll );
+//		System.out.println("after: ha " + helpalloc + ", mD=" + meritoriousDem + ", nD=" + needyDem + ", mA=" + meritoriousAll + ", nA=" + needyAll );
 		//test whether allocation within tolerance range of demand(=agent's allocation)
-		if (meritiousAll < meritiousDem - judgeTolerance || meritiousAll > meritiousDem + judgeTolerance){
-			if(!droppedHeads.contains(head.getName())){//with useSat tests head in every timestep
-				droppedHeads.add(head.getName());
-			}
+		if (meritoriousAll < meritoriousDem - judgeTolerance || meritoriousAll > meritoriousDem + judgeTolerance){
 			if(useSat){//head naughty, satisfaction decreases
 				satisfaction -= satisfaction*decreaseSat;
 			}
-			
-			System.out.println("after: ha " + helpalloc + ", mD=" + meritiousDem + ", nD=" + needyDem + ", mA=" + meritiousAll + ", nA=" + needyAll );
+			if((!droppedHeads.contains(head.getName()) && !principle5Sat) ||
+				 	(!droppedHeads.contains(head.getName()) && principle5Sat && satisfaction < graduatedSat)){//with useSat tests head in every timestep
+				droppedHeads.add(head.getName());
+			}
+			System.out.println("after: ha " + helpalloc + ", mD=" + meritoriousDem + ", nD=" + needyDem + ", mA=" + meritoriousAll + ", nA=" + needyAll );
 			System.out.println("naughty head (m)" + head.getName() + head.profile + " by member [" + name + "]" + profile );
 			return;
 		} else if (needyAll < needyDem - judgeTolerance || needyAll > needyDem + judgeTolerance){
-			if(!droppedHeads.contains(head.getName())){
-				droppedHeads.add(head.getName());
-			}
 			if(useSat){//head naughty, satisfaction decreases
 				satisfaction -= satisfaction*decreaseSat;
 			}
+			if( (!droppedHeads.contains(head.getName()) && !principle5Sat) ||
+					(!droppedHeads.contains(head.getName()) && principle5Sat && satisfaction < graduatedSat) ){
+				droppedHeads.add(head.getName());
+			}
 			System.out.println("naughty head (n)" + head.getName() + head.profile + " by member [" + name + "]" + profile );
-			System.out.println("after: ha " + helpalloc + ", mD=" + meritiousDem + ", nD=" + needyDem + ", mA=" + meritiousAll + ", nA=" + needyAll );
+			System.out.println("after: ha " + helpalloc + ", mD=" + meritoriousDem + ", nD=" + needyDem + ", mA=" + meritoriousAll + ", nA=" + needyAll );
 			return;
 		} else {
 			if(useSat){//head nice, satisfaction increases
