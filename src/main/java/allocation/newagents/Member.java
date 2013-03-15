@@ -416,6 +416,10 @@ public class Member extends Agent {
 		return decreaseSat;
 	}
 
+	public boolean isPrinciple5Sat() {
+		return principle5Sat;
+	}
+
 	public double getGraduatedSat() {
 		return graduatedSat;
 	}

@@ -666,12 +666,15 @@ rule "members take head off list when satisfied again"
 	when
 		$i : Institution($iid : id, $round : round)
 		$head : Head(institutionId == $iid, $hdname : name)
-		$member: Member(institutionId == $iid, useSat == true, getSatisfaction() > getGraduatedSat())
+		$member: Member(institutionId == $iid, useSat == true, principle5Sat == true, getSatisfaction() > getGraduatedSat())
 	then
+		if ($member.getDroppedHeads().contains($hdname)){
+			logger.info($member.getName() + " took head " + $hdname + " from List");
+		}
 		modify($member){
 			getDroppedHeads().remove($hdname);
 		}
-		logger.info($member.getName() + " took head " + $hdname + " from List");
+		
 end
 
 rule "members leave due to dissatisfaction" //head wouldn't leave!
