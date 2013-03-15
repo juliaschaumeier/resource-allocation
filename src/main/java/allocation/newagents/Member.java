@@ -342,10 +342,13 @@ public class Member extends Agent {
 			if(useSat){//head naughty, satisfaction decreases
 				satisfaction -= satisfaction*decreaseSat;
 			}
-			if((!droppedHeads.contains(head.getName()) && !principle5Sat) ||
-				 	(!droppedHeads.contains(head.getName()) && principle5Sat && satisfaction < graduatedSat)){//with useSat tests head in every timestep
+			if(!droppedHeads.contains(head.getName())){//put on list if not there yet
 				droppedHeads.add(head.getName());
 			}
+			//if((!droppedHeads.contains(head.getName()) && !principle5Sat) || //put on list if below graduatedSat
+			//	 	(!droppedHeads.contains(head.getName()) && principle5Sat && satisfaction < graduatedSat)){//with useSat tests head in every timestep
+			//	droppedHeads.add(head.getName());
+			//}
 			System.out.println("after: ha " + helpalloc + ", mD=" + meritoriousDem + ", nD=" + needyDem + ", mA=" + meritoriousAll + ", nA=" + needyAll );
 			System.out.println("naughty head (m)" + head.getName() + head.profile + " by member [" + name + "]" + profile );
 			return;
@@ -353,10 +356,13 @@ public class Member extends Agent {
 			if(useSat){//head naughty, satisfaction decreases
 				satisfaction -= satisfaction*decreaseSat;
 			}
-			if( (!droppedHeads.contains(head.getName()) && !principle5Sat) ||
-					(!droppedHeads.contains(head.getName()) && principle5Sat && satisfaction < graduatedSat) ){
+			if(!droppedHeads.contains(head.getName())){
 				droppedHeads.add(head.getName());
 			}
+			//if((!droppedHeads.contains(head.getName()) && !principle5Sat) ||
+			//	 	(!droppedHeads.contains(head.getName()) && principle5Sat && satisfaction < graduatedSat)){//with useSat tests head in every timestep
+			//	droppedHeads.add(head.getName());
+			//}
 			System.out.println("naughty head (n)" + head.getName() + head.profile + " by member [" + name + "]" + profile );
 			System.out.println("after: ha " + helpalloc + ", mD=" + meritoriousDem + ", nD=" + needyDem + ", mA=" + meritoriousAll + ", nA=" + needyAll );
 			return;
@@ -408,6 +414,10 @@ public class Member extends Agent {
 
 	public double getDecreaseSat() {
 		return decreaseSat;
+	}
+
+	public double getGraduatedSat() {
+		return graduatedSat;
 	}
 	
 	

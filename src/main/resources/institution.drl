@@ -659,6 +659,21 @@ rule "Members appeal after recent sanction"
 		logger.info(appeal);
 end */
 
+rule "members take head off list when satisfied again" 
+	ruleflow-group "exclude"
+	salience 100
+	no-loop
+	when
+		$i : Institution($iid : id, $round : round)
+		$head : Head(institutionId == $iid, $hdname : name)
+		$member: Member(institutionId == $iid, useSat == true, getSatisfaction() > getGraduatedSat())
+	then
+		modify($member){
+			getDroppedHeads().remove($hdname);
+		}
+		logger.info($member.getName() + " took head " + $hdname + " from List");
+end
+
 rule "members leave due to dissatisfaction" //head wouldn't leave!
 	ruleflow-group "exclude"
 	salience 100 //before head could be excluded; might as well be in appeal??
