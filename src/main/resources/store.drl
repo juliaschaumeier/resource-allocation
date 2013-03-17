@@ -138,12 +138,40 @@ rule "list of dropped heads"
 		//logger.info($d1.size() +"-"+ new ArrayList($d1).size());
 		int length = 0;
 		int sat = 0;
+		int equityS = 0;
+		int equityC = 0;
+		int equalityS = 0;
+		int equalityC = 0;
+		int need = 0;
 		for (Object o : $l){
 			Member m = (Member) o;
 			length += m.getDroppedHeads().size();
 			sat += m.getSatisfaction();
+			if (m.getJusticePrAbundance() == RaMethod.EQUITY){
+				if (m.getJusticePrCrisis() == RaMethod.EQUITY){
+					equityS ++;
+				} else {
+					equityC ++;
+				}
+			}
+			if (m.getJusticePrAbundance() == RaMethod.EQUALITY){
+				if (m.getJusticePrCrisis() == RaMethod.EQUALITY){
+					equalityS ++;
+				} else {
+					equalityC ++;
+				}
+			}
+			if (m.getJusticePrAbundance() == RaMethod.NEED){
+				need ++;
+			}
 		}
 		logger.info($l.size() + " Members have " + length + " heads on lists, accumulative satisfaction=" + sat);
 	sto.getSimulation().getEnvironment().setProperty("headsListSize", $round, Integer.toString(length));
 	sto.getSimulation().getEnvironment().setProperty("accSatisfaction", $round, Integer.toString(sat));
+	sto.getSimulation().getEnvironment().setProperty("equityStay", $round, Integer.toString(equityS));
+	sto.getSimulation().getEnvironment().setProperty("equityChange", $round, Integer.toString(equityC));
+	sto.getSimulation().getEnvironment().setProperty("equalityStay", $round, Integer.toString(equalityS));
+	sto.getSimulation().getEnvironment().setProperty("equityChange", $round, Integer.toString(equalityC));
+	sto.getSimulation().getEnvironment().setProperty("need", $round, Integer.toString(need));
+	
 end
