@@ -137,10 +137,13 @@ rule "list of dropped heads"
 		//logger.info($d2 + " heads List Size " + $d1);
 		//logger.info($d1.size() +"-"+ new ArrayList($d1).size());
 		int length = 0;
+		int sat = 0;
 		for (Object o : $l){
 			Member m = (Member) o;
 			length += m.getDroppedHeads().size();
+			sat += m.getSatisfaction();
 		}
-		logger.info($l.size() + " Members have " + length + " heads on lists.");
-		sto.getSimulation().getEnvironment().setProperty("headsListSize", $round, Integer.toString(length));
+		logger.info($l.size() + " Members have " + length + " heads on lists, accumulative satisfaction=" + sat);
+	sto.getSimulation().getEnvironment().setProperty("headsListSize", $round, Integer.toString(length));
+	sto.getSimulation().getEnvironment().setProperty("accSatisfaction", $round, Integer.toString(sat));
 end
