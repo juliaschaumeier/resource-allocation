@@ -140,22 +140,27 @@ public class DroolsSimulation {
 		double initialLevel = 2 * sim.standardRequest * sim.agents;
 		// http://stackoverflow.com/questions/604424/java-convert-string-to-enum
 		//RefillScheme rScheme = Enum.valueOf(RefillScheme, sim.refScheme.trim().toUpperCase());
-		CommonPool pool0 = new CommonPool(0, initialLevel, initialLevel,
-				sim.outAppropriationFrequency, sim.outImproveFrequency, RefillScheme.valueOf(sim.refScheme));
-
-		// create a single institution governing the pool.
-		Institution i0 = new Institution(session, 0, sim.agents, pool0,
-				sim.principle2, sim.principle3, sim.principle4, sim.principle5,
-				sim.principle6, sim.unintentionalError, sim.voteHead, sim.voteRaMethod, sim.headDecides,
-				sim.monitoringLevel, sim.monitoringCost, sim.outMonitoringLevel,
-				sim.outMonitoringCost, sim.noisePercentage, sim.noiseLevel, 
-				sim.appealtime, sim.samplingrateRaMethod, sim.samplingrateHead);
-
-		// insert pool and institution into drools session.
-		session.insert(pool0);
-		session.insert(i0);
+		
+		for (int k = 0; k < sim.instNum; k++){
+			
+			CommonPool pool = new CommonPool(k, initialLevel, initialLevel,
+					sim.outAppropriationFrequency, sim.outImproveFrequency, RefillScheme.valueOf(sim.refScheme));
+	
+			// create a single institution governing the pool.
+			Institution i = new Institution(session, k, sim.agents, pool,
+					sim.principle2, sim.principle3, sim.principle4, sim.principle5,
+					sim.principle6, sim.unintentionalError, sim.voteHead, sim.voteRaMethod, sim.headDecides,
+					sim.monitoringLevel, sim.monitoringCost, sim.outMonitoringLevel,
+					sim.outMonitoringCost, sim.noisePercentage, sim.noiseLevel, 
+					sim.appealtime, sim.samplingrateRaMethod, sim.samplingrateHead, sim.changeCluster);
+	
+			// insert pool and institution into drools session.
+			session.insert(pool);
+			session.insert(i);
+		}
 		session.insert(t);
-
+		
+		
 		double comp;// for (initial)compiancyDegree
 		double rd;
 		Profile prof;
@@ -179,7 +184,7 @@ public class DroolsSimulation {
 				else {
 					prCris = RaMethod.EQUITY;
 				}
-			}else if (rd < sim.justicePrPercentage2){
+			}else if (rd < sim.justicePrPercentage2 + sim.justicePrPercentage1){
 				prAbun = RaMethod.EQUALITY;
 				if(Random.randomDouble() < sim.justicePrTransition2){
 					prCris = RaMethod.NEED;
@@ -237,7 +242,7 @@ public class DroolsSimulation {
 				}
 			}else if (rd < sim.justicePrPercentage2){
 				prAbun = RaMethod.EQUALITY;
-				if(Random.randomDouble() < sim.justicePrTransition2){
+				if(Random.randomDouble() < sim.justicePrTransition2 + sim.justicePrPercentage1){
 					prCris = RaMethod.NEED;
 				}
 				else {

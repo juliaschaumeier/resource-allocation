@@ -128,8 +128,8 @@ public class Member extends Agent {
 	public Vote vote(Institution i, CommonPool pool, String ballot) {
 		if (ballot.equals("raMethod") && i.isVoteRaMethod()) {
 			RaMethod vote;
-			if (pool.getResourceLevel() < 1.5 * i.getInitialAgents()
-					* standardRequest / compliancyDegree) {
+			if ((pool.getResourceLevel() < 1.5 * i.getInitialAgents()* standardRequest / compliancyDegree && !i.isChangeCluster())
+				|| (pool.getResourceLevel() < 1.5 * i.getActiveMemberCount() * standardRequest / compliancyDegree && i.isChangeCluster())) {
 				vote = RaMethod.RATION;
 			} else {
 				vote = RaMethod.QUEUE;
@@ -270,14 +270,19 @@ public class Member extends Agent {
 	
 	public void judgeHead(Institution i, CommonPool pool, Head head, List<Demand> demands, List<Allocation> allocations){
 		RaMethod justicePr;
-		if (pool.getStartResourceLevel() < 1.5 * i.getInitialAgents()
-				* standardRequest / compliancyDegree) {//low resource
+		if ((pool.getResourceLevel() < 1.5 * i.getInitialAgents()* standardRequest / compliancyDegree && !i.isChangeCluster())
+				|| (pool.getResourceLevel() < 1.5 * i.getActiveMemberCount() * standardRequest / compliancyDegree && i.isChangeCluster())) {//low resource
 			justicePr = justicePrCrisis;
 		} else {
 			justicePr = justicePrAbundance;
 		}
 		//how many agents can get allocated roughly:
-		int helpalloc = (int) ((pool.getStartResourceLevel()/standardRequest)*((double) judgeSize)/i.getInitialAgents()); //=floor
+		int helpalloc = 0;
+		if (!i.isChangeCluster()){
+			helpalloc = (int) ((pool.getStartResourceLevel()/standardRequest)*((double) judgeSize)/i.getInitialAgents()); //=floor
+		} else if (i.getActiveMemberCount() != 0){
+			helpalloc = (int) ((pool.getStartResourceLevel()/standardRequest)*((double) judgeSize)/i.getActiveMemberCount()); //=floor
+		}
 		int meritoriousDem = 0;
 		int needyDem = 0;
 		int meritoriousAll = 0;

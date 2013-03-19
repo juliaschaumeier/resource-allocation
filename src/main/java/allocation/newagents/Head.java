@@ -119,7 +119,8 @@ public class Head extends Member {
 		} else {//headDecides==true, even if head is set externally
 			RaMethod justicePr;
 			LinkedList<Demand> demandQueue = new LinkedList<Demand>();
-			if (level < 1.5 * i.getInitialAgents()* standardRequest / compliancyDegree) {//low resource
+			if ((level < 1.5 * i.getInitialAgents()* standardRequest / compliancyDegree && !i.isChangeCluster())
+					|| (level < 1.5 * i.getActiveMemberCount()* standardRequest / compliancyDegree && i.isChangeCluster())) {//low resource
 				justicePr = justicePrCrisis;
 			} else {
 				justicePr = justicePrAbundance;

@@ -70,7 +70,7 @@ rule "Increment round"
 		}
 end
 
-rule "assign new head" //so far, head also governs if inactive!!
+rule "Assign new head" //so far, head also governs if inactive!!
 	ruleflow-group "init"
 	salience 500
 	when
@@ -125,7 +125,7 @@ end */
 rule "End of the institution"
 	ruleflow-group 'init'
 	when 
-		$i : Institution( $iid : id )
+		$i : Institution( $iid : id, changeCluster==false )
 		not( exists( Member( institutionId == $iid ) ))
 	then
 		retract($i);
@@ -190,7 +190,8 @@ rule "External assignment of RaMethod"
 		$i : Institution( $iid : id, $pool : pool, $r : round, round % samplingrateRaMethod == 0, voteRaMethod == false)
 		$hd : Head( institutionId == $iid )
 	then
-		if ($pool.getResourceLevel() < 1.5*$i.getInitialAgents()*$hd.getStandardRequest()){
+		if (($pool.getResourceLevel() < 1.5*$i.getInitialAgents()*$hd.getStandardRequest() && !$i.isChangeCluster())
+			|| ($pool.getResourceLevel() < 1.5*$i.getActiveMemberCount()*$hd.getStandardRequest() && $i.isChangeCluster()) ){
 			$i.setAllocationMethod( RaMethod.RATION );
 		}
 		else
@@ -659,7 +660,7 @@ rule "Members appeal after recent sanction"
 		logger.info(appeal);
 end */
 
-rule "members take head off list when satisfied again" 
+rule "Members take head off list when satisfied again" 
 	ruleflow-group "exclude"
 	salience 100
 	no-loop
@@ -677,12 +678,12 @@ rule "members take head off list when satisfied again"
 		
 end
 
-rule "members leave due to dissatisfaction" //head wouldn't leave!
+rule "Members leave due to dissatisfaction" //head wouldn't leave!
 	ruleflow-group "exclude"
 	salience 100 //before head could be excluded; might as well be in appeal??
 	no-loop
 	when
-		$i : Institution($iid : id, $round : round)
+		$i : Institution($iid : id, $round : round, changeCluster == false)
 		$head : Head(institutionId == $iid, $hdname : name)
 		$member: Member(name != $hdname, institutionId == $iid, useSat == true, getSatisfaction() < getLeaveSat())
 	then
@@ -691,7 +692,28 @@ rule "members leave due to dissatisfaction" //head wouldn't leave!
 		logger.info("Left dissatisfied "+ $member);
 end
 
-rule "member exclusion"//member inactive -> nonmember active
+rule "Members go to different cluster"
+ruleflow-group "exclude"
+	salience 100 //before head could be excluded; might as well be in appeal??
+	no-loop
+	when
+		$i : Institution($iid : id, $round : round, changeCluster == true)
+		$head : Head(institutionId == $iid, $hdname : name)
+		$member : Member(name != $hdname, institutionId == $iid, useSat == true, getSatisfaction() < getLeaveSat())
+		$insts : List() from collect (Institution(round == $round, id != $iid))
+	then
+		Institution ninst = (Institution) $insts.get(Random.randomInt($insts.size()));
+		modify($member){
+			setInstitutionId(ninst.getId()),
+			setPool(ninst.getPool().getId()),
+			setSatisfaction($member.getInitialSat())
+			// empty droppedHeads??
+		}
+		logger.info($member + " changed to Institution "+ ninst.getId());
+end
+
+
+rule "Member exclusion"//member inactive -> nonmember active
 	ruleflow-group "exclude"
 	when
 		Institution($iid : id, $round : round, principle5 == false)
@@ -703,7 +725,7 @@ rule "member exclusion"//member inactive -> nonmember active
 		logger.info("Excluded "+ $member);
 end
 
-rule "member exclusion with graduated sanctions"//member inactive -> nonmember active
+rule "Member exclusion with graduated sanctions"//member inactive -> nonmember active
 	ruleflow-group "exclude"
 	when
 		$i : Institution($iid : id, $round : round, principle5 == true)
@@ -715,7 +737,7 @@ rule "member exclusion with graduated sanctions"//member inactive -> nonmember a
 		logger.info("Excluded "+ $member);
 end
 
-rule "member back after sanction" //member inactive -> member active (Pr4/5)
+rule "Member back after sanction" //member inactive -> member active (Pr4/5)
 	ruleflow-group "exclude"
 	no-loop
 	when

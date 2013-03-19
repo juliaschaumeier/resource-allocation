@@ -32,6 +32,9 @@ public class Simulation extends InjectedSimulation {
 
 	private final Logger logger = Logger.getLogger(Simulation.class);
 	private Time t = new IntegerTime();
+	
+	@Parameter(name = "instNum", optional = true)
+	public int instNum = 1;
 
 	@Parameter(name = "agents", optional = true)
 	public int agents = 100;
@@ -140,6 +143,9 @@ public class Simulation extends InjectedSimulation {
 	public boolean principle5Sat = false;
 	@Parameter(name="graduatedSat", optional = true)
 	public double graduatedSat = 0.6; //3 increases between 2 decreases ok (at start)
+	
+	@Parameter(name="changeCluster", optional = true)
+	public boolean changeCluster = false;
 	
 	@Parameter(name = "refScheme", optional = true)
 	public String refScheme = "CUSTOM";

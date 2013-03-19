@@ -7,7 +7,7 @@ public abstract class Agent {
 
 	final String name;
 	final int id;
-	final int pool;
+	int pool;
 	double compliancyDegree;
 	final double initialCompliancyDegree;//static?? need it when member->nonMember
 	final double standardRequest;
@@ -100,6 +100,10 @@ public abstract class Agent {
 	
 	public int getJudgeTolerance(){
 		return judgeTolerance;
+	}
+
+	public void setPool(int pool) {
+		this.pool = pool;
 	}
 
 	@Override

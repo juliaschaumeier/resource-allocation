@@ -22,14 +22,14 @@ rule "Log pool level after appropriation"
 	ruleflow-group 'exclude'
 	when
 		$pool : CommonPool($pid : id, $level : resourceLevel)
-		Institution($round : round, pool == $pool)
+		Institution($iid : id, $round : round, pool == $pool)
 	then
 		logger.info("Pool level: "+ $level);
 		if ($level >= 0){
-			sto.getSimulation().getEnvironment().setProperty("level", $round, Double.toString($level));
+			sto.getSimulation().getEnvironment().setProperty("level"+$iid, $round, Double.toString($level));
 		}
 		else{
-			sto.getSimulation().getEnvironment().setProperty("level", $round, Double.toString(0));
+			sto.getSimulation().getEnvironment().setProperty("level"+$iid, $round, Double.toString(0));
 			insert( new negResourceHandler($round,$level,$pool));
 		}
 end
@@ -38,7 +38,7 @@ rule "Log sum of approprations"
 	salience -1000
 	ruleflow-group 'exclude'
 	when
-		Institution($round : round, $pool : pool)
+		Institution($iid : id, $round : round, $pool : pool)
 		$appropriations :  List() from collect ( Appropriated(pool == $pool, round == $round))
 		not (exists negResourceHandler(round == $round, pool == $pool))
 	then
@@ -48,14 +48,14 @@ rule "Log sum of approprations"
 			appSum += app.getQuantity();
 		}
 		logger.info("Sum of appropriation: "+ appSum);
-		sto.getSimulation().getEnvironment().setProperty("appropriation sum", $round, Double.toString(appSum));
+		sto.getSimulation().getEnvironment().setProperty("appropriation sum"+$iid, $round, Double.toString(appSum));
 end
 
 rule "Log sum of approprations when gone bankrupt"//agents can't appropriate negative amount!!
 	salience -1000
 	ruleflow-group 'exclude'
 	when
-		Institution($round : round, $pool : pool)
+		Institution($iid : id, $round : round, $pool : pool)
 		$appropriations :  List() from collect ( Appropriated(round == $round, pool == $pool))
 		negResourceHandler(round == $round, $level : quantity, pool == $pool)
 	then
@@ -66,7 +66,7 @@ rule "Log sum of approprations when gone bankrupt"//agents can't appropriate neg
 		}
 		appSum += $level; //negative resource
 		logger.info("Sum of appropriation: "+ appSum);
-		sto.getSimulation().getEnvironment().setProperty("appropriation sum", $round, Double.toString(appSum));
+		sto.getSimulation().getEnvironment().setProperty("appropriation sum"+$iid, $round, Double.toString(appSum));
 end
 
 rule "Log active members" //activeMemberCount is value start only
@@ -77,7 +77,7 @@ rule "Log active members" //activeMemberCount is value start only
 		$members :  List() from collect ( Member(institutionId == $iid, active == true))
 	then
 		logger.info("Active members: "+ $members.size());
-		sto.getSimulation().getEnvironment().setProperty("active members", $round, Integer.toString($members.size()));
+		sto.getSimulation().getEnvironment().setProperty("active members"+$iid, $round, Integer.toString($members.size()));
 end
 
 rule "log whether institution is alive or dead" //for averaging purposes
@@ -102,7 +102,7 @@ rule "log change of head"
 	then
 		logger.info("Head changed to " + $hc);
 		//sto.getSimulation().getEnvironment().setProperty("new head", $round, Integer.toString($hid));
-		sto.getSimulation().getEnvironment().setProperty("new head", $round, Integer.toString($hc.size()));
+		sto.getSimulation().getEnvironment().setProperty("new head"+$iid, $round, Integer.toString($hc.size()));
 end
 	
 
@@ -166,12 +166,12 @@ rule "list of dropped heads"
 			}
 		}
 		logger.info($l.size() + " Members have " + length + " heads on lists, accumulative satisfaction=" + sat);
-	sto.getSimulation().getEnvironment().setProperty("headsListSize", $round, Integer.toString(length));
-	sto.getSimulation().getEnvironment().setProperty("accSatisfaction", $round, Integer.toString(sat));
-	sto.getSimulation().getEnvironment().setProperty("equityStay", $round, Integer.toString(equityS));
-	sto.getSimulation().getEnvironment().setProperty("equityChange", $round, Integer.toString(equityC));
-	sto.getSimulation().getEnvironment().setProperty("equalityStay", $round, Integer.toString(equalityS));
-	sto.getSimulation().getEnvironment().setProperty("equityChange", $round, Integer.toString(equalityC));
-	sto.getSimulation().getEnvironment().setProperty("need", $round, Integer.toString(need));
+	sto.getSimulation().getEnvironment().setProperty("headsListSize"+$iid, $round, Integer.toString(length));
+	sto.getSimulation().getEnvironment().setProperty("accSatisfaction"+$iid, $round, Integer.toString(sat));
+	sto.getSimulation().getEnvironment().setProperty("equityStay"+$iid, $round, Integer.toString(equityS));
+	sto.getSimulation().getEnvironment().setProperty("equityChange"+$iid, $round, Integer.toString(equityC));
+	sto.getSimulation().getEnvironment().setProperty("equalityStay"+$iid, $round, Integer.toString(equalityS));
+	sto.getSimulation().getEnvironment().setProperty("equalityChange"+$iid, $round, Integer.toString(equalityC));
+	sto.getSimulation().getEnvironment().setProperty("need"+$iid, $round, Integer.toString(need));
 	
 end

@@ -51,6 +51,7 @@ public class Institution {
 	int excludetime = 5;//multiplied with sanction level
 	
 	final CommonPool pool;
+	final boolean changeCluster;
 
 	public Queue<Demand> demandQueue = new LinkedList<Demand>();
 	public List<Member> instMembers = new ArrayList<Member>();
@@ -61,7 +62,7 @@ public class Institution {
 			boolean principle4, boolean principle5, boolean principle6, boolean unintentionalError,
 			boolean voteHead, boolean voteRaMethod, boolean headDecides, double monitoringLevel, double monitoringCost, 
 			double outMonitoringLevel, double outMonitoringCost, double noisePercentage,
-			double noiseLevel, int appealtime, int samplingrateRaMethod, int samplingrateHead) {
+			double noiseLevel, int appealtime, int samplingrateRaMethod, int samplingrateHead, boolean changeCluster) {
 		super();
 		this.session = session;
 		this.id = id;
@@ -85,6 +86,7 @@ public class Institution {
 		this.appealtime = appealtime;
 		this.samplingrateRaMethod = samplingrateRaMethod;
 		this.samplingrateHead = samplingrateHead;
+		this.changeCluster = changeCluster;
 	}
 
 	public int getId() {
@@ -264,4 +266,9 @@ public class Institution {
 	public int getAppealtime() {
 		return appealtime;
 	}
+
+	public boolean isChangeCluster() {
+		return changeCluster;
+	}
+	
 }
