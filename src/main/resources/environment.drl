@@ -18,6 +18,11 @@ declare Appropriated
 	pool : CommonPool
 end
 
+declare LevelAdjusted
+	institution : Institution
+	round : IntegerTime
+end
+
 rule "Max level" // Given an overfilled CommonPool, reset resource level to maximum
 	salience -11
 	ruleflow-group 'init'
@@ -28,7 +33,7 @@ rule "Max level" // Given an overfilled CommonPool, reset resource level to maxi
 			setResourceLevel($max),
 			setStartResourceLevel($max)
 		}
-		logger.info("Pool was overfilled, resetting to max level");
+		logger.info("Pool was overfilled, resetting to max level=" + $max);
 end
 
 rule "Refill pool - CUSTOM scheme"
@@ -121,8 +126,30 @@ rule "Refill pool - CLUSTER custom scheme"
 			setLastFilled( time )
 			
 		}
-		logger.info("Fill resource by "+ fillAmount +", pool" + $pool.getId() + " resource level is "+ $pool.getResourceLevel());
+		logger.info("Fill resource by "+ fillAmount +", pool" + $pool.getId() + " resource level is "+ $pool.getResourceLevel() +
+			" with " + $i.getActiveMemberCount() + " active members (of " + $i.getInitialAgents() + ")");
 end
+
+rule "Adjust maximum pool level - CLUSTER custom scheme"
+salience -9
+	ruleflow-group 'init'
+	when
+		// when a new round occurs
+		$t : IntegerTime() 
+		// and there is a pool which has not been filled in this round
+		$pool : CommonPool( $t.intValue() > getLastFilled(), getRefScheme() == RefillScheme.CLUSTERC)
+		// and the institution governing this pool is in the 'Exclude' phase
+		$i : Institution( pool == $pool )
+		 Member($sr : getStandardRequest())
+		not LevelAdjusted( institution == $i, round == $t)
+	then
+		double maxL = 2*$sr*((double) $i.getActiveMemberCount()); 
+		modify($pool){
+			setMaxLevel(maxL)
+		}
+		insert( new LevelAdjusted( $i, $t ) );
+end
+	
 
 rule "Refill pool - MEMBER scheme"
 	salience -10

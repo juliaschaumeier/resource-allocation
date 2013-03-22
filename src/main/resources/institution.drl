@@ -377,7 +377,7 @@ rule "Agent monitoring list"
 		$head : Head( institutionId == $iid, pool == $pool.id)
 		$members : Set( ) from collect( Member( institutionId == $iid) )
 		$nonMembers : Set( ) from collect( NonMember( pool == $pool.id) )
-		not TaskExecuted( institution == $iid, task == "monitor", round == $round)
+		not TaskExecuted( institution == $i, task == "monitor", round == $round)
 	then
 		Set<String> monitored = $head.monitor( $i, $pool, $members, $nonMembers );
 		logger.info("Monitoring list: "+ monitored);
@@ -509,7 +509,7 @@ rule "Members judge heads allocation"
 		$jList : JudgeList(agent == $name, round == $round, $acNames : list)
 		$demands : List( ) from collect( Demand( pool == $pool.id, round == $round, agent memberOf $acNames) )
 		$allocations : List( ) from collect( Allocation(pool==$pool.id, round == $round, agent memberOf $acNames) )
-		not TaskExecuted( institution == $iid, task == "judgeHead", agent == $name, round == $round)
+		not TaskExecuted( institution == $i, task == "judgeHead", agent == $name, round == $round)
 		$heads : List() from collect (Head(institutionId == $iid))
 	then
 		modify($m) {

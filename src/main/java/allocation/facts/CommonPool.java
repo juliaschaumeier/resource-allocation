@@ -6,8 +6,8 @@ public class CommonPool {
 
 	final int id;
 	double resourceLevel;
-	final double maxLevel;
-	int lastFilled = 0;
+	double maxLevel;
+	int lastFilled = -1;
 	boolean depleated = false;
 	double outAppropriationFrequency; //depends on pool (and institution) how hard it is to appropriate from it
 	double outImproveFrequency;
@@ -42,6 +42,10 @@ public class CommonPool {
 
 	public double getMaxLevel() {
 		return maxLevel;
+	}
+
+	public void setMaxLevel(double maxLevel) {
+		this.maxLevel = maxLevel;
 	}
 
 	public int getLastFilled() {
