@@ -1,7 +1,7 @@
 package allocation.facts;
 
 public enum RefillScheme {
-	CUSTOM, HIGH, LOW, MEMBER, CLUSTERC, CLUSTERH, CLUSTERL
+	CUSTOM, HIGH, MEDIUM, LOW, MEMBER, CLUSTERC, CLUSTERH, CLUSTERM, CLUSTERL
 };
 
 
