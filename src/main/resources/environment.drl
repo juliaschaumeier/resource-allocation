@@ -45,7 +45,7 @@ rule "Refill pool - CUSTOM scheme"
 		// and there is a pool which has not been filled in this round
 		$pool : CommonPool( $t.intValue() > getLastFilled(), getRefScheme() == RefillScheme.CUSTOM)
 		// and the institution governing this pool is in the 'Exclude' phase
-		Institution( pool == $pool )
+		$i : Institution( pool == $pool )
 	then // refill pool
 		double fillAmount = $pool.getMaxLevel() / 2;
 		int time = $t.intValue();
@@ -79,10 +79,12 @@ rule "Refill pool - CUSTOM scheme"
 			setLastFilled( time )
 			
 		}
-		logger.info("Fill resource by "+ fillAmount +", pool resource level is "+ $pool.getResourceLevel());
+		//logger.info("Fill resource by "+ fillAmount +", pool resource level is "+ $pool.getResourceLevel());
+		logger.info("Fill resource by "+ fillAmount +", pool" + $pool.getId() + " resource level is "+ $pool.getResourceLevel() +
+			" with " + $i.getActiveMemberCount() + " active members (of " + $i.getInitialAgents() + ")");
 end
 
-rule "Refill pool - CLUSTER custom scheme"
+/*rule "Refill pool - CLUSTER custom scheme"
 	salience -10
 	ruleflow-group 'init'
 	when
@@ -128,7 +130,7 @@ rule "Refill pool - CLUSTER custom scheme"
 		}
 		logger.info("Fill resource by "+ fillAmount +", pool" + $pool.getId() + " resource level is "+ $pool.getResourceLevel() +
 			" with " + $i.getActiveMemberCount() + " active members (of " + $i.getInitialAgents() + ")");
-end
+end*/
 
 rule "Refill pool - HIGH/MEDIUM/LOW scheme"
 	salience -10
@@ -161,7 +163,7 @@ rule "Refill pool - HIGH/MEDIUM/LOW scheme"
 		logger.info("Fill resource by "+ fillAmount +", pool resource level is "+ $pool.getResourceLevel());
 end
 
-rule "Refill pool - CLUSTER high/medium/low scheme"
+/*rule "Refill pool - CLUSTER high/medium/low scheme"
 	salience -10
 	ruleflow-group 'init'
 	when
@@ -192,26 +194,16 @@ rule "Refill pool - CLUSTER high/medium/low scheme"
 		}
 		logger.info("Fill resource by "+ fillAmount +", pool" + $pool.getId() + " resource level is "+ $pool.getResourceLevel() +
 			" with " + $i.getActiveMemberCount() + " active members (of " + $i.getInitialAgents() + ")");
-end
+end*/
 
 
 rule "Adjust maximum pool level - any CLUSTER scheme"
 salience -9
 	ruleflow-group 'init'
 	when
-		// when a new round occurs
 		$t : IntegerTime() 
-		// and there is a pool which has not been filled in this round
-		($pool : CommonPool( $t.intValue() > getLastFilled(), getRefScheme() == RefillScheme.CLUSTERC)
-		or
-		$pool : CommonPool( $t.intValue() > getLastFilled(), getRefScheme() == RefillScheme.CLUSTERH)
-		or
-		$pool : CommonPool( $t.intValue() > getLastFilled(), getRefScheme() == RefillScheme.CLUSTERM)
-		or
-		$pool : CommonPool( $t.intValue() > getLastFilled(), getRefScheme() == RefillScheme.CLUSTERL)
-		)
-		// and the institution governing this pool is in the 'Exclude' phase
-		$i : Institution( pool == $pool )
+		$pool : CommonPool( $t.intValue() > getLastFilled())
+		$i : Institution( pool == $pool, changeCluster == true )
 		 Member($sr : getStandardRequest())
 		not LevelAdjusted( institution == $i, round == $t)
 	then

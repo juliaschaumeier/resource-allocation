@@ -14,12 +14,12 @@ public class CommonPool {
 	double startResourceLevel ; //level at start of each round
 	RefillScheme refScheme;
 	
-	public CommonPool(int id, double initialLevel, double maxLavel, double outAppropriationFrequency, double outImproveFrequency, RefillScheme refScheme) {
+	public CommonPool(int id, double initialLevel, double maxLevel, double outAppropriationFrequency, double outImproveFrequency, RefillScheme refScheme) {
 		super();
 		this.id = id;
 		this.resourceLevel = initialLevel;
 		this.startResourceLevel = initialLevel;
-		this.maxLevel = maxLavel;
+		this.maxLevel = maxLevel;
 		this.outAppropriationFrequency = outAppropriationFrequency;
 		this.outImproveFrequency = outImproveFrequency;
 		this.refScheme = refScheme;
