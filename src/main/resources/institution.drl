@@ -156,6 +156,7 @@ rule "Vote for RA method"
 	when
 		$i : Institution( $iid : id, $pool : pool, voteRaMethod == true, $r : round , principle3 == true)
 		$member : Member( institutionId == $iid, pool == $pool.id )
+		not( exists( Vote( voter == $member.name, ballot == "raMethod", round == $r ) ) )
 	then
 		Vote v = $member.vote( $i, $pool, "raMethod" );
 		if(v != null) {
@@ -172,6 +173,7 @@ rule "Vote for Head"
 	when
 		$i : Institution( $iid : id, $pool : pool, voteHead == true, $r : round , principle3 == true)
 		$member : Member( institutionId == $iid, pool == $pool.id )
+		not( exists( Vote( voter == $member.name, ballot == "head", round == $r ) ) )
 	then
 		Vote v = $member.vote( $i, $pool, "head" );
 		if(v != null) {
