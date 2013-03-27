@@ -339,16 +339,36 @@ rule "Update winner head"
 		
 end
 
-rule "Update member satisfaction if head changes" //also if set externally
+rule "Update member satisfaction if head appointed" //if set externally
 	ruleflow-group 'vote'
 	no-loop
 	when
 		Institution( $iid : id, $round : round )
-		HeadChange( institution == $iid, round == $round )
+		HeadChange( institution == $iid, round == $round)
 		$m : Member( institutionId == $iid, useSat == true )
+		not ( Declared(institution == $iid, ballot == "head", round == $round) )
 	then
 		modify($m){
 			setSatisfaction( $m.getInitialSat() );
+		}
+end
+
+rule "Update member satisfaction if head elected"
+	ruleflow-group 'vote'
+	no-loop
+	when
+		Institution( $iid : id, $round : round )
+		HeadChange( institution == $iid, round == $round)
+		Declared(institution == $iid, ballot == "head", round == $round, $r : result)
+		$m : Member( institutionId == $iid, useSat == true )
+		Vote( voter == $m.name, ballot == "head", round == $round, $v : value )
+	then
+		double sat = $m.getInitialSat();
+		if ( $v == $r ){
+			sat = 1.0;
+		}
+		modify($m){
+			setSatisfaction( sat );
 		}
 end
 	
