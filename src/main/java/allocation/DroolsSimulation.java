@@ -25,6 +25,7 @@ import uk.ac.imperial.presage2.core.simulator.RunnableSimulation;
 import uk.ac.imperial.presage2.core.simulator.Scenario;
 import uk.ac.imperial.presage2.core.util.random.Random;
 import allocation.facts.CommonPool;
+import allocation.facts.RefillScheme;
 import allocation.facts.Institution;
 import allocation.newagents.Head;
 import allocation.newagents.Member;
@@ -136,7 +137,8 @@ public class DroolsSimulation {
 		// create a single common pool
 		double initialLevel = 2 * sim.standardRequest * sim.agents;
 		CommonPool pool0 = new CommonPool(0, initialLevel, initialLevel,
-				sim.outAppropriationFrequency, sim.outImproveFrequency);
+				sim.outAppropriationFrequency, sim.outImproveFrequency, RefillScheme.valueOf(sim.refScheme));
+
 
 		// create a single institution governing the pool.
 		Institution i0 = new Institution(session, 0, sim.agents, pool0,

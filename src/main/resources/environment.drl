@@ -37,7 +37,7 @@ rule "Refill pool"
 		// when a new round occurs
 		$t : IntegerTime() 
 		// and there is a pool which has not been filled in this round
-		$pool : CommonPool( $t.intValue() > getLastFilled())
+		$pool : CommonPool( $t.intValue() > getLastFilled(), getRefScheme() == RefillScheme.CUSTOM)
 		// and the institution governing this pool is in the 'Exclude' phase
 		Institution( pool == $pool )
 	then // refill pool
@@ -68,7 +68,37 @@ rule "Refill pool"
 			setResourceLevel( $pool.getResourceLevel() + fillAmount),
 			setLastFilled( time )
 		}
-		logger.info("Fill resource by "+ fillAmount +", pool resource level is "+ $pool.getResourceLevel() );
+		logger.info("Fill resource by "+ fillAmount +" with scheme " + $pool.getRefScheme() + ", pool resource level is "+ $pool.getResourceLevel() );
+end
+
+rule "Refill pool - HIGH/MEDIUM/LOW scheme"
+	salience -10
+	ruleflow-group 'init'
+	when
+		$t : IntegerTime() 
+		($pool : CommonPool( $t.intValue() > getLastFilled(), getRefScheme() == RefillScheme.HIGH)
+		or
+		$pool : CommonPool( $t.intValue() > getLastFilled(), getRefScheme() == RefillScheme.MEDIUM)
+		or
+		$pool : CommonPool( $t.intValue() > getLastFilled(), getRefScheme() == RefillScheme.LOW)
+		)
+		Institution( pool == $pool )
+	then 
+		double fillAmount = $pool.getMaxLevel() / 2;
+		int time = $t.intValue();
+		if ($pool.getRefScheme() == RefillScheme.HIGH){
+			fillAmount *= 0.95;
+		} else if ($pool.getRefScheme() == RefillScheme.MEDIUM){
+			fillAmount *= 0.80;
+		}else{ //RefillScheme.LOW
+			fillAmount *= 0.50;
+		}
+		double fill = $pool.getResourceLevel() + fillAmount;
+		modify($pool) {
+			setResourceLevel(fill),
+			setLastFilled( time )
+		}
+		logger.info("Fill resource by "+ fillAmount +" with scheme " + $pool.getRefScheme() + ", pool resource level is "+ $pool.getResourceLevel());
 end
 
 rule "NonMember appropriation"

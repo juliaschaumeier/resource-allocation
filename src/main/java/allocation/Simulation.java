@@ -94,6 +94,9 @@ public class Simulation extends InjectedSimulation {
 	public double noisePercentage = 0.05; // how many suffer from noise
 	@Parameter(name = "noiseLevel", optional = true)
 	public double noiseLevel = 0.1; // noise impact
+	
+	@Parameter(name = "refScheme", optional = true)
+	public String refScheme = "CUSTOM";
 
 	Set<Institution> institutions = new HashSet<Institution>();
 

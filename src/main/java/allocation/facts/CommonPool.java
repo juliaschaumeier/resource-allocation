@@ -4,10 +4,6 @@ package allocation.facts;
 
 public class CommonPool {
 
-	public enum RefillRate {
-		LOW, MEDIUM, HIGH
-	};
-
 	final int id;
 	double resourceLevel;
 	final double maxLevel;
@@ -15,14 +11,18 @@ public class CommonPool {
 	boolean depleated = false;
 	double outAppropriationFrequency; //depends on pool (and institution) how hard it is to appropriate from it
 	double outImproveFrequency;
+	RefillScheme refScheme;
+	
 
-	public CommonPool(int id, double initialLevel, double maxLavel, double outAppropriationFrequency, double outImproveFrequency) {
+	public CommonPool(int id, double initialLevel, double maxLavel, double outAppropriationFrequency, double outImproveFrequency,
+			RefillScheme refScheme) {
 		super();
 		this.id = id;
 		this.resourceLevel = initialLevel;
 		this.maxLevel = maxLavel;
 		this.outAppropriationFrequency = outAppropriationFrequency;
 		this.outImproveFrequency = outImproveFrequency;
+		this.refScheme = refScheme;
 	}
 
 	public int getId() {
@@ -74,6 +74,11 @@ public class CommonPool {
 		return outImproveFrequency;
 	}
 
+	public RefillScheme getRefScheme() {
+		return refScheme;
+	}
+
+	
 	
 	
 }
