@@ -84,53 +84,7 @@ rule "Refill pool - CUSTOM scheme"
 			" with " + $i.getActiveMemberCount() + " active members (of " + $i.getInitialAgents() + ")");
 end
 
-/*rule "Refill pool - CLUSTER custom scheme"
-	salience -10
-	ruleflow-group 'init'
-	when
-		// when a new round occurs
-		$t : IntegerTime() 
-		// and there is a pool which has not been filled in this round
-		$pool : CommonPool( $t.intValue() > getLastFilled(), getRefScheme() == RefillScheme.CLUSTERC)
-		// and the institution governing this pool is in the 'Exclude' phase
-		$i : Institution( pool == $pool )
-	then // refill pool
-		double fillAmount = $pool.getMaxLevel() / 2;
-		int time = $t.intValue();
-		if(time < 50) {
-			fillAmount *= 1;
-		} else if(time < 100) {
-			fillAmount *= 0.95;
-		} else if(time < 150) {
-			fillAmount *= 0.87;
-		} else if(time < 200) {
-			fillAmount *= 0.52;
-		} else if(time < 250) {
-			fillAmount *= 0.92;
-		} else if(time < 300) {
-			fillAmount *= 0.97;
-		} else if(time < 350) {
-			fillAmount *= 0.62;
-		} else if(time < 400) {
-			fillAmount *= 0.90;
-		} else if(time < 450) {
-			fillAmount *= 0.50;
-		} else if(time < 500) {
-			fillAmount *= 0.91;
-		} else {
-			fillAmount *= 0.50;
-		}
-		fillAmount = fillAmount*((double) $i.getActiveMemberCount()/$i.getInitialAgents());
-		double fill = $pool.getResourceLevel() + fillAmount;
-		modify($pool) {
-			setResourceLevel(fill),
-			setStartResourceLevel(fill),
-			setLastFilled( time )
-			
-		}
-		logger.info("Fill resource by "+ fillAmount +", pool" + $pool.getId() + " resource level is "+ $pool.getResourceLevel() +
-			" with " + $i.getActiveMemberCount() + " active members (of " + $i.getInitialAgents() + ")");
-end*/
+
 
 rule "Refill pool - HIGH/MEDIUM/LOW scheme"
 	salience -10
@@ -163,38 +117,6 @@ rule "Refill pool - HIGH/MEDIUM/LOW scheme"
 		logger.info("Fill resource by "+ fillAmount +", pool resource level is "+ $pool.getResourceLevel());
 end
 
-/*rule "Refill pool - CLUSTER high/medium/low scheme"
-	salience -10
-	ruleflow-group 'init'
-	when
-		$t : IntegerTime() 
-		($pool : CommonPool( $t.intValue() > getLastFilled(), getRefScheme() == RefillScheme.CLUSTERH)
-		or
-		$pool : CommonPool( $t.intValue() > getLastFilled(), getRefScheme() == RefillScheme.CLUSTERM)
-		or
-		$pool : CommonPool( $t.intValue() > getLastFilled(), getRefScheme() == RefillScheme.CLUSTERL)
-		)
-		$i : Institution( pool == $pool )
-	then 
-		double fillAmount = $pool.getMaxLevel() / 2;
-		int time = $t.intValue();
-		if ($pool.getRefScheme() == RefillScheme.CLUSTERH){
-			fillAmount *= 0.95;
-		} else if ($pool.getRefScheme() == RefillScheme.CLUSTERM){
-			fillAmount *= 0.80;
-		}else{ //RefillScheme.CLUSTERL
-			fillAmount *= 0.50;
-		}
-		fillAmount = fillAmount*((double) $i.getActiveMemberCount()/$i.getInitialAgents());
-		double fill = $pool.getResourceLevel() + fillAmount;
-		modify($pool) {
-			setResourceLevel(fill),
-			setStartResourceLevel(fill),
-			setLastFilled( time )
-		}
-		logger.info("Fill resource by "+ fillAmount +", pool" + $pool.getId() + " resource level is "+ $pool.getResourceLevel() +
-			" with " + $i.getActiveMemberCount() + " active members (of " + $i.getInitialAgents() + ")");
-end*/
 
 
 rule "Adjust maximum pool level - any CLUSTER scheme"
