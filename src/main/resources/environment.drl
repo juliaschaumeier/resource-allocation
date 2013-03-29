@@ -86,7 +86,9 @@ rule "Refill pool - HIGH/MEDIUM/LOW scheme"
 	then 
 		double fillAmount = $pool.getMaxLevel() / 2;
 		int time = $t.intValue();
-		if ($pool.getRefScheme() == RefillScheme.HIGH){
+		if(time < 50) {
+			fillAmount *= 1;
+		}else if ($pool.getRefScheme() == RefillScheme.HIGH){
 			fillAmount *= 0.95;
 		} else if ($pool.getRefScheme() == RefillScheme.MEDIUM){
 			fillAmount *= 0.80;
