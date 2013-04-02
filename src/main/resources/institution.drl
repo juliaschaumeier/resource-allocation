@@ -364,7 +364,7 @@ rule "Update member satisfaction if head elected"
 		Vote( voter == $m.name, ballot == "head", round == $round, $v : value )
 	then
 		double sat = $m.getInitialSat();
-		if ( $v == $r ){
+		if ( $v != null && $v == $r ){
 			sat = 1.0;
 		}
 		modify($m){
