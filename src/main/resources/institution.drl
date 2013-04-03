@@ -7,6 +7,9 @@ import allocation.newagents.*
 import uk.ac.imperial.presage2.core.IntegerTime
 import uk.ac.imperial.presage2.core.util.random.Random
 import java.util.HashMap
+import java.util.Map
+import java.util.Map.Entry
+import java.util.ArrayList
 import java.util.List
 import java.util.Set
 
@@ -15,6 +18,7 @@ global org.apache.log4j.Logger logger
 declare TaskExecuted
 	institution : Institution
 	task : String
+	agent : String
 	round : int
 end
 
@@ -46,7 +50,12 @@ declare Appealed
 	round : int
 	institution : int
 end
-	
+
+declare HeadChange
+	agent : String //name of new head
+	round : int
+	institution : int
+end
 
 //sets IntegerTime and round number to be the same, first thing
 rule "Increment round" 
@@ -61,15 +70,34 @@ rule "Increment round"
 		}
 end
 
-rule "Count members" // not yet needed
-	ruleflow-group 'init'
+rule "Assign new head" //so far, head also governs if inactive!!
+	ruleflow-group "init"
+	salience 500
 	when
-		$i : Institution( $iid : id, $count : memberCount )
-		List( size != $count, $members : size ) from collect( Member( institutionId == $iid ) )
+		Institution($iid : id, $round : round)
+		not( exists( Head(institutionId == $iid)))
+		$members : List( size > 0 ) from collect( Member( institutionId == $iid) )
+	then
+		Member m = (Member) $members.get(Random.randomInt($members.size()));
+		retract(m); //drools will treat head as member
+		insert(new Head(m));
+		insert(new HeadChange(m.getName(), $round, $iid ));//for satisfaction update
+		logger.info("New Head "+ m);
+end
+
+rule "Create Member List and Head" // not yet needed
+	ruleflow-group 'init'
+	no-loop
+	when
+		$i : Institution( $iid : id)
+		$members : List() from collect( Member( institutionId == $iid ) )
+		$head : Head (institutionId == $iid)
 	then
 		modify($i) {
-			setMemberCount( $members );
+			setInstMembers( $members ),
+			setInstHead( $head )
 		}
+		logger.info($head + ", Memberlist: " + $members);
 end
 
 rule "Count active members" // for member.demand()
@@ -83,7 +111,7 @@ rule "Count active members" // for member.demand()
 		}
 end
 
-rule "Disable votes" // head renews it every timestep in CFV
+/* rule "Disable votes" // head renews it every timestep in CFV
 	ruleflow-group 'init'
 	when 
 		$inst : Institution( voteHead || voteRaMethod )
@@ -92,12 +120,12 @@ rule "Disable votes" // head renews it every timestep in CFV
 			setVoteHead( false ),
 			setVoteRaMethod( false )
 		}
-end
+end */
 
 rule "End of the institution"
 	ruleflow-group 'init'
 	when 
-		$i : Institution( $iid : id )
+		$i : Institution( $iid : id, changeCluster==false )
 		not( exists( Member( institutionId == $iid ) ))
 	then
 		retract($i);
@@ -128,6 +156,7 @@ rule "Vote for RA method"
 	when
 		$i : Institution( $iid : id, $pool : pool, voteRaMethod == true, $r : round , principle3 == true)
 		$member : Member( institutionId == $iid, pool == $pool.id )
+		not( exists( Vote( voter == $member.name, ballot == "raMethod", round == $r ) ) )
 	then
 		Vote v = $member.vote( $i, $pool, "raMethod" );
 		if(v != null) {
@@ -136,6 +165,62 @@ rule "Vote for RA method"
 			insert(v);
 			logger.info(v);
 		}
+end
+
+rule "Vote for Head"
+	salience 1000
+	ruleflow-group 'vote'
+	when
+		$i : Institution( $iid : id, $pool : pool, voteHead == true, $r : round , principle3 == true)
+		$member : Member( institutionId == $iid, pool == $pool.id )
+		not( exists( Vote( voter == $member.name, ballot == "head", round == $r ) ) )
+	then
+		Vote v = $member.vote( $i, $pool, "head" );
+		if(v != null) {
+			v.setVoter( $member.getName() );
+			v.setRound( $r );
+			insert(v);
+			logger.info(v);
+		}
+end
+
+rule "External assignment of RaMethod"
+	salience 1000
+	ruleflow-group 'vote'
+	no-loop
+	when
+		$i : Institution( $iid : id, $pool : pool, $r : round, round % samplingrateRaMethod == 0, voteRaMethod == false)
+		$hd : Head( institutionId == $iid )
+	then
+		if (($pool.getResourceLevel() < 1.5*$i.getInitialAgents()*$hd.getStandardRequest() && !$i.isChangeCluster())
+			|| ($pool.getResourceLevel() < 1.5*$i.getActiveMemberCount()*$hd.getStandardRequest() && $i.isChangeCluster()) ){
+			$i.setAllocationMethod( RaMethod.RATION );
+		}
+		else
+			$i.setAllocationMethod( RaMethod.QUEUE );
+		insert(new Declared( $iid, "raMethod", $r, $i.getAllocationMethod().ordinal() ));
+		logger.info("Allocation method for institution "+ $iid +" externally set to "+ $i.getAllocationMethod());
+end
+
+rule "External assignment of Head"
+	salience 1000
+	ruleflow-group 'vote'
+	no-loop
+	when
+		$i : Institution( $iid : id, $pool : pool, $r : round, round % samplingrateHead == 0, voteHead == false)
+		$h : Head(institutionId == $iid)
+		$members : List( size > 0 ) from collect( Member( institutionId == $iid, name != $h.name ) )
+		not (exists HeadChange(institution == $iid, round == $r))
+	then
+		//head to member
+		retract($h);
+		insert(new Member($h));
+		//new head from random member
+		Member m = (Member) $members.get(Random.randomInt($members.size()));
+		retract(m); //drools will treat head as member
+		insert(new Head(m));
+		insert(new HeadChange(m.getName(), $r, $iid ));//for satisfaction update
+		logger.info("Head  for institution "+ $iid +" externally set to "+ m);	
 end
 
 rule "Count votes"
@@ -152,7 +237,7 @@ rule "Count votes"
 		HashMap<Integer, Integer> tally = new HashMap<Integer, Integer>();
 		for( Object o : $votes ) {
 			Vote v = (Vote) o; // vote->(ballot,value)
-			if(tally.containsKey(v.getValue())) {
+			if(tally.containsKey(v.getValue())) { //apparently counts nulls as well, see member.voteHead()!!
 				tally.put(v.getValue(), tally.get(v.getValue()) + 1);
 			} else {
 				tally.put(v.getValue(), 1);
@@ -168,6 +253,7 @@ rule "Declare winner and update Ra method" //if votes equal, nothing happens;
 	when
 		$i : Institution( $iid : id, $round : round , principle3 == true )
 		$vc : VoteCount( ballot == "raMethod", round == $round, institution == $iid)
+		not (Declared(institution == $iid, ballot == "raMethod", round == $round))
 	then
 		Integer forQueue = $vc.result.get(RaMethod.QUEUE.ordinal());
 		Integer forRation = $vc.result.get(RaMethod.RATION.ordinal());
@@ -183,21 +269,6 @@ rule "Declare winner and update Ra method" //if votes equal, nothing happens;
 		logger.info("Allocation method for institution "+ $iid +" set to "+ $i.getAllocationMethod()); 
 end
 
-rule "External assignment of RaMethod"
-	ruleflow-group 'vote'
-	when
-		$i : Institution( $iid : id, $pool : pool, $r : round, round % samplingrate == 0, principle3 == false)
-		$hd : Head( institutionId == $iid )
-	then
-		if ($pool.getResourceLevel() < 1.5*$i.getInitialAgents()*$hd.getStandardRequest()){
-			$i.setAllocationMethod( RaMethod.RATION );
-		}
-		else
-			$i.setAllocationMethod( RaMethod.QUEUE );
-		insert(new Declared( $iid, "raMethod", $r, $i.getAllocationMethod().ordinal() ));
-		logger.info("Allocation method for institution "+ $iid +" externally set to "+ $i.getAllocationMethod());
-end
-
 rule "Reset demand-queue if necessary" //when switch from QUEUE to RATION
 	ruleflow-group 'vote'
 	when 
@@ -208,8 +279,99 @@ rule "Reset demand-queue if necessary" //when switch from QUEUE to RATION
 	then
 		$i.demandQueue.clear();
 end
-		
 
+rule "Declare winner head" //if votes equal, nothing happens;
+	ruleflow-group 'vote'
+	when
+		$i : Institution( $iid : id, $round : round , principle3 == true )
+		Head($headId : id, institutionId == $iid)
+		$vc : VoteCount( ballot == "head", round == $round, institution == $iid)
+		not (Declared(institution == $iid, ballot == "head", round == $round))
+	then
+		Map<Integer, Integer> tally = $vc.result;
+		//if null is voted by more than half the members no new head is returned
+		if(tally.containsKey(null) && tally.get(null) > $i.instMembers.size()/2){
+				retract($i);
+				logger.info("ANARCHY, no head!!"); 
+		} else { //choose member-ids from tally with highest counts, put on list
+			tally.remove(null); //null counts not significant
+			if(tally.containsKey($headId) && tally.get($headId) > $i.instMembers.size()/2){//head has more than half the votes (vote of confidence)
+				Integer hd = (Integer) $headId;
+				insert(new Declared( $iid, $vc.ballot, $vc.round, hd ));
+				logger.info("Head that won vote remains : " + hd);
+			}else{//head has under half the votes
+				tally.remove($headId);//head off list
+				Integer largestVal = null;
+				List<Entry<Integer, Integer>> largestList = new ArrayList<Entry<Integer, Integer>>();
+				for (Entry<Integer, Integer> j : tally.entrySet()){
+				     if (largestVal == null || largestVal  < j.getValue()){
+				         largestVal = j.getValue();
+				         largestList.clear();
+				         largestList.add(j);
+				     }else if (largestVal == j.getValue()){
+				         largestList.add(j);
+				     }
+				}
+				Integer hd = largestList.get(Random.randomInt(largestList.size())).getKey();
+				insert(new Declared( $iid, $vc.ballot, $vc.round, hd ));
+				logger.info("Head that won vote is : " + hd);
+			}
+		}
+end
+
+rule "Update winner head"
+	ruleflow-group 'vote'
+	no-loop
+	when
+		$i : Institution( $iid : id, $round : round , principle3 == true )
+		Declared(institution == $iid, ballot == "head", round == $round, $r : result)
+		$h : Head(institutionId == $iid, $hid : id, $hid != $r)
+		$m : Member(institutionId == $iid, $mid : id, $mid == $r)
+	then 
+		//head to member
+		retract($h);
+		insert(new Member($h));
+		//member to head
+		retract($m);
+		insert(new Head($m));
+		logger.info("New Head (winner): " + $m);
+		insert(new HeadChange($m.getName(), $round, $iid ));
+		
+end
+
+rule "Update member satisfaction if head appointed" //if set externally
+	ruleflow-group 'vote'
+	no-loop
+	when
+		Institution( $iid : id, $round : round )
+		HeadChange( institution == $iid, round == $round)
+		$m : Member( institutionId == $iid, useSat == true )
+		not ( Declared(institution == $iid, ballot == "head", round == $round) )
+	then
+		modify($m){
+			setSatisfaction( $m.getInitialSat() );
+		}
+end
+
+rule "Update member satisfaction if head elected"
+	ruleflow-group 'vote'
+	no-loop
+	when
+		Institution( $iid : id, $round : round )
+		HeadChange( institution == $iid, round == $round)
+		Declared(institution == $iid, ballot == "head", round == $round, $r : result)
+		$m : Member( institutionId == $iid, useSat == true )
+		Vote( voter == $m.name, ballot == "head", round == $round, $v : value )
+	then
+		double sat = $m.getInitialSat();
+		if ( $v != null && $v == $r ){
+			sat = 1.0;
+		}
+		modify($m){
+			setSatisfaction( sat );
+		}
+end
+	
 rule "Member Demands"
 	salience 1000
 	ruleflow-group 'demand'
@@ -220,32 +382,36 @@ rule "Member Demands"
 		//no agent allowed to demand if on queue:
 		not Demand( agent == $member.name, round < $round, this memberOf $i.demandQueue )
 	then
-		insert( new Demand( $member.getName(), $round, $member.demand( $i, $pool ), $pool.getId() ) );
+		double dem = $member.demand( $i, $pool );
+		if (dem > 0){
+			insert( new Demand( $member.getName(), $round, dem, $pool.getId(), $member.getProfile() ) );
+		}
 end
 
 rule "Agent monitoring list" 
 	//independent of principles: collect all (non-)members
 	//must be known before allocation, only monitor 'active', see head.monitor
-	//head.monitor writes those on list (=monitored string) who should be monitored
+	//head.monitor writes those on list (=monitored string) who should be monitored (Pr1/Pr4)
 	ruleflow-group "allocate" 
 	salience 1000
 	when
 		$i : Institution( $iid : id, $pool : pool, $round : round )
-		$head : Head( institutionId == $iid, pool == $pool.id )
+		$head : Head( institutionId == $iid, pool == $pool.id)
 		$members : Set( ) from collect( Member( institutionId == $iid) )
 		$nonMembers : Set( ) from collect( NonMember( pool == $pool.id) )
-		not TaskExecuted( $i, "monitor", $round ;)
+		not TaskExecuted( institution == $i, task == "monitor", round == $round)
 	then
 		Set<String> monitored = $head.monitor( $i, $pool, $members, $nonMembers );
 		logger.info("Monitoring list: "+ monitored);
 		for( String agent : monitored ) {
 			insert( new Monitored( agent, $round ) );
 		}
-		insert( new TaskExecuted( $i, "monitor", $round ) );
+		insert( new TaskExecuted( $i, "monitor", $head.getName(), $round ) );
 end
 
 rule "Perform resource allocation"
 	ruleflow-group 'allocate'
+	no-loop
 	when
 		$i : Institution( $iid : id, $pool : pool, $round : round, principle2 == true )
 		$hd : Head( institutionId == $iid )
@@ -276,7 +442,7 @@ rule "Member appropriation - no allocation" //what principle active see member.a
 			setResourceLevel( $pool.getResourceLevel() - appropriatedAmount )
 		}
 		logger.info(app);
-		logger.info($pool);
+		//logger.info($pool);
 end
 
 rule "Member appropriation - allocated"
@@ -287,7 +453,7 @@ rule "Member appropriation - allocated"
 		$i : Institution( $iid : id, $pool : pool, $round : round )
 		$member : Member( institutionId == $iid )
 		not Appropriated( round == $round, agent == $member.getName() )
-		$all : Allocation( round == $round, agent == $member.getName(), pool == $pool )
+		$all : Allocation( round == $round, agent == $member.getName(), pool == $pool.id )
 	then
 		double appropriatedAmount = $member.appropriate( $i, $pool, $all );
 		Appropriated app = new Appropriated( $member.getName(), $round, appropriatedAmount, $pool );
@@ -331,7 +497,53 @@ rule "Deduct nonMember monitoring cost" // happens after appropriation
 		insert( new Deducted( $m ) );
 end
 
-rule "Agent monitoring list"  //not very important that it's the monitor/head
+//$votes : List( size > 0 ) from accumulate( 
+//			$v : Vote( $voter : voter, round == $round, ballot == $b ) and 
+//			Member( name == $voter, institutionId == $iid ) , collectList($v) )
+
+rule "Members select agents for head judgment"//test every head for members on satisfaction evaluation scheme
+	salience -100
+	ruleflow-group "appropriate"
+	when
+		$i : Institution($iid : id, $round : round, headDecides == true)
+		$head : Head(institutionId == $iid)
+		(	$m : Member(institutionId == $iid, $name : name, $head.name not memberOf droppedHeads, useSat == false)
+		or
+			$m : Member(institutionId == $iid, $name : name, useSat == true)	)
+		$acNames : List () from accumulate(Member(institutionId == $iid, $n : name, active == true), collectList($n))
+		not JudgeList(agent == $name, round == $round, institution == $iid)
+	then  
+		List<String> acN = $m.judgeSelect($acNames);
+		JudgeList jL = new JudgeList($name, $round, acN, $iid);
+		insert(jL);
+		//logger.info(jL);
+end
+
+
+rule "Members judge heads allocation"
+	salience -100
+	no-loop
+	ruleflow-group "appropriate"
+	when
+		$i : Institution($iid : id, $pool : pool, $round : round, headDecides == true)
+		$head : Head(institutionId == $iid)
+		$m : Member(institutionId == $iid, $name : name)
+		$jList : JudgeList(agent == $name, round == $round, $acNames : list)
+		$demands : List( ) from collect( Demand( pool == $pool.id, round == $round, agent memberOf $acNames) )
+		$allocations : List( ) from collect( Allocation(pool==$pool.id, round == $round, agent memberOf $acNames) )
+		not TaskExecuted( institution == $i, task == "judgeHead", agent == $name, round == $round)
+		$heads : List() from collect (Head(institutionId == $iid))
+	then
+		modify($m) {
+			judgeHead($i, $pool, $head, $demands, $allocations);
+		}
+		insert( new TaskExecuted( $i, "judgeHead", $name, $round ) );
+		//logger.info("Comparison demand/allocation: " + $demands + $allocations);
+		//logger.info("Heads in inst: " + $heads);
+end
+
+
+rule "Sanctioning monitored members (first time or no graduated sanctions)" //not very important that it's the monitor/head
 	ruleflow-group "report"
 	no-loop 
 	when
@@ -339,10 +551,10 @@ rule "Agent monitoring list"  //not very important that it's the monitor/head
 		$member: Member( $name : name, institutionId == $iid, pool == $pool.id )
 		Monitored( agent == $name, round == $round )
 		not Sanctioned( agent == $name, round == $round )
-		(	(Allocation(agent == $name, round == $round, $alloc : quantity, pool == $pool) and //agent had been allocated
+		(	(Allocation(agent == $name, round == $round, $alloc : quantity, pool == $pool.id) and //agent had been allocated
 			Appropriated(agent == $name, round == $round, $approp : quantity, pool == $pool, $approp > $alloc))
 		or
-			(not Allocation(agent == $name, round == $round, pool == $pool) and //agent had not been allocated
+			(not Allocation(agent == $name, round == $round, pool == $pool.id) and //agent had not been allocated
 			Appropriated(agent == $name, round == $round, $approp : quantity, pool == $pool, $approp > 0))	)
 		not Sanctioned(agent == $name)
 	then 
@@ -362,10 +574,10 @@ rule "Sanctioning monitored members (repeatedly)"
 		$member: Member( $name : name, institutionId == $iid, pool == $pool.id )
 		Monitored( agent == $name, round == $round )
 		not Sanctioned( agent == $name, round == $round )
-		(	(Allocation(agent == $name, round == $round, $alloc : quantity, pool == $pool) and //agent had been allocated
+		(	(Allocation(agent == $name, round == $round, $alloc : quantity, pool == $pool.id) and //agent had been allocated
 			Appropriated(agent == $name, round == $round, $approp : quantity, pool == $pool, $approp > $alloc))
 		or
-			(not Allocation(agent == $name, round == $round, pool == $pool) and //agent had not been allocated
+			(not Allocation(agent == $name, round == $round, pool == $pool.id) and //agent had not been allocated
 			Appropriated(agent == $name, round == $round, $approp : quantity, pool == $pool, $approp > 0))	)
 		Sanctioned(agent == $name, $level : level) //highest level of sanctioning
 		not Sanctioned(agent == $name, $l : level, $l > $level)
@@ -415,7 +627,6 @@ rule "Eliminate sanctioned member from demandQueue"
 		}
 end
 
-
 rule "Members appeal against sanction"
 	ruleflow-group "appeal"
 	when
@@ -434,7 +645,8 @@ rule "Members appeal against sanction"
 		logger.info(appeal);
 end
 
-/*rule "Members appeal against sanction"
+/*
+rule "Members appeal against sanction"
 	ruleflow-group "appeal"
 	when
 		$i : Institution($iid : id, $round : round, principle6 == true)
@@ -468,9 +680,62 @@ rule "Members appeal after recent sanction"
 			setActive(true)
 		}
 		logger.info(appeal);
-end*/
+end */
 
-rule "member exclusion"//member inactive -> nonmember active
+rule "Members take head off list when satisfied again" 
+	ruleflow-group "exclude"
+	salience 100
+	no-loop
+	when
+		$i : Institution($iid : id, $round : round)
+		$head : Head(institutionId == $iid, $hdname : name)
+		$member: Member(institutionId == $iid, useSat == true, principle5Sat == true, getSatisfaction() > getGraduatedSat())
+	then
+		if ($member.getDroppedHeads().contains($hdname)){
+			logger.info($member.getName() + " took head " + $hdname + " from List");
+		}
+		modify($member){
+			getDroppedHeads().remove($hdname);
+		}
+		
+end
+
+rule "Members leave due to dissatisfaction" //head wouldn't leave!
+	ruleflow-group "exclude"
+	salience 100 //before head could be excluded; might as well be in appeal??
+	no-loop
+	when
+		$i : Institution($iid : id, $round : round, changeCluster == false)
+		$head : Head(institutionId == $iid, $hdname : name)
+		$member: Member(name != $hdname, institutionId == $iid, useSat == true, getSatisfaction() < getLeaveSat())
+	then
+		retract($member);
+		insert(new NonMember($member));
+		logger.info("Left dissatisfied "+ $member);
+end
+
+rule "Members go to different cluster"
+ruleflow-group "exclude"
+	salience 100 //before head could be excluded; might as well be in appeal??
+	no-loop
+	when
+		$i : Institution($iid : id, $round : round, changeCluster == true)
+		$head : Head(institutionId == $iid, $hdname : name)
+		$member : Member(name != $hdname, institutionId == $iid, useSat == true, getSatisfaction() < getLeaveSat())
+		$insts : List() from collect (Institution(round == $round, id != $iid))
+	then
+		Institution ninst = (Institution) $insts.get(Random.randomInt($insts.size()));
+		modify($member){
+			setInstitutionId(ninst.getId()),
+			setPool(ninst.getPool().getId()),
+			setSatisfaction($member.getInitialSat())
+			// empty droppedHeads??
+		}
+		logger.info($member + " changed to Institution "+ ninst.getId());
+end
+
+
+rule "Member exclusion"//member inactive -> nonmember active
 	ruleflow-group "exclude"
 	when
 		Institution($iid : id, $round : round, principle5 == false)
@@ -482,7 +747,7 @@ rule "member exclusion"//member inactive -> nonmember active
 		logger.info("Excluded "+ $member);
 end
 
-rule "member exclusion with graduated sanctions"//member inactive -> nonmember active
+rule "Member exclusion with graduated sanctions"//member inactive -> nonmember active
 	ruleflow-group "exclude"
 	when
 		$i : Institution($iid : id, $round : round, principle5 == true)
@@ -494,7 +759,7 @@ rule "member exclusion with graduated sanctions"//member inactive -> nonmember a
 		logger.info("Excluded "+ $member);
 end
 
-rule "member back after sanction" //member inactive -> member active (Pr4/5)
+rule "Member back after sanction" //member inactive -> member active (Pr4/5)
 	ruleflow-group "exclude"
 	no-loop
 	when
@@ -512,16 +777,4 @@ rule "member back after sanction" //member inactive -> member active (Pr4/5)
 			logger.info("Back in: "+ $member);
 		}
 end
-
-rule "assign new head" //so far, head also governs if inactive!!
-	ruleflow-group "exclude"
-	when
-		Institution($iid : id, $round : round)
-		not( exists( Head(institutionId == $iid)))
-		$members : List( size > 0 ) from collect( Member( institutionId == $iid) )
-	then
-		Member m = (Member) $members.get(Random.randomInt($members.size()));
-		retract(m); //drools will treat head as member
-		insert(new Head(m));
-		logger.info("New Head "+ m);
-end
+	
