@@ -434,41 +434,6 @@ rule "Members appeal against sanction"
 		logger.info(appeal);
 end
 
-/*rule "Members appeal against sanction"
-	ruleflow-group "appeal"
-	when
-		$i : Institution($iid : id, $round : round, principle6 == true)
-		$member: Member($name : name, institutionId == $iid, active == false)
-		Sanctioned(agent == $name, round == $round)
-		not (Sanctioned(agent == $name, $rd : round, $round - $rd <= $i.appealtime) and
-			Appealed(agent == $name, round >= $rd, institution == $iid))
-		not Appealed(agent == $name, round == $round, institution == $iid)
-	then
-		Appealed appeal = new Appealed($name, $round, $iid);
-		insert(appeal);
-		modify ( $member ){
-			setActive(true)
-		}
-		logger.info(appeal);
-end
-
-rule "Members appeal after recent sanction"
-	ruleflow-group "appeal"
-	when
-		$i : Institution($iid : id, $round : round, principle6 == true)
-		$member: Member( $name : name, institutionId == $iid, active == false)
-		Sanctioned(agent == $name, round == $round)
-		not (Sanctioned(agent == $name, $rd : round, $level : level, $round - ($rd + $level*$i.excludetime) <= $i.appealtime) and
-			not Appealed(agent == $name, round >= $rd, institution == $iid))
-		not Appealed(agent == $name, round == $round, institution == $iid)
-	then
-		Appealed appeal = new Appealed($name, $round, $iid);
-		insert(appeal);
-		modify ( $member ){
-			setActive(true)
-		}
-		logger.info(appeal);
-end*/
 
 rule "member exclusion"//member inactive -> nonmember active
 	ruleflow-group "exclude"
