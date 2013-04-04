@@ -34,7 +34,7 @@ rule "Log pool level after appropriation"
 		}
 end
 
-rule "Log sum of appropriations"
+rule "Log sum of approprations"
 	salience -1000
 	ruleflow-group 'exclude'
 	when
@@ -51,7 +51,7 @@ rule "Log sum of appropriations"
 		sto.getSimulation().getEnvironment().setProperty("appropriation sum", $round, Double.toString(appSum));
 end
 
-rule "Log sum of appropriations when gone bankrupt"//agents can't appropriate negative amount!!
+rule "Log sum of approprations when gone bankrupt"//agents can't appropriate negative amount!!
 	salience -1000
 	ruleflow-group 'exclude'
 	when

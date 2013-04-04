@@ -331,7 +331,7 @@ rule "Deduct nonMember monitoring cost" // happens after appropriation
 		insert( new Deducted( $m ) );
 end
 
-rule "Agent monitoring list"  //not very important that it's the monitor/head
+rule "Sanctioning monitored members (first time or no graduated sanctions)" //not very important that it's the monitor/head
 	ruleflow-group "report"
 	no-loop 
 	when
