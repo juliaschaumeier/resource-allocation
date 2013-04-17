@@ -119,7 +119,7 @@ end
 
 
 
-rule "Adjust maximum pool level - any CLUSTER scheme"
+rule "Adjust maximum pool level - any CLUSTER scheme" //before refill takes place
 salience -9
 	ruleflow-group 'init'
 	when
