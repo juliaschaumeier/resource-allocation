@@ -168,8 +168,8 @@ public class Member extends Agent {
 		}
 	}
 	
-	public void changeBehaviour(int maxSanctionLevel, int memberLevel){
-		if(Random.randomDouble() < changeBehaviourPercentage + memberLevel/(2*maxSanctionLevel)){
+	public void changeBehaviour(int maxSanctionLevel, int sanctionLevel){
+		if(Random.randomDouble() < changeBehaviourPercentage + sanctionLevel/(2*maxSanctionLevel)){
 			compliancyDegree -= compliancyDegree*(1 - improveBehaviour*Random.randomDouble());
 			preferredRequest = standardRequest*compliancyDegree*(0.9 + 0.2*Random.randomDouble());
 		}

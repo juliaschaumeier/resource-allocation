@@ -435,7 +435,7 @@ rule "Members appeal against sanction"
 end
 
 
-rule "member exclusion"//member inactive -> nonmember active
+rule "Member exclusion"//member inactive -> nonmember active
 	ruleflow-group "exclude"
 	when
 		Institution($iid : id, $round : round, principle5 == false)
@@ -447,7 +447,7 @@ rule "member exclusion"//member inactive -> nonmember active
 		logger.info("Excluded "+ $member);
 end
 
-rule "member exclusion with graduated sanctions"//member inactive -> nonmember active
+rule "Member exclusion with graduated sanctions"//member inactive -> nonmember active
 	ruleflow-group "exclude"
 	when
 		$i : Institution($iid : id, $round : round, principle5 == true)
@@ -459,7 +459,7 @@ rule "member exclusion with graduated sanctions"//member inactive -> nonmember a
 		logger.info("Excluded "+ $member);
 end
 
-rule "member back after sanction" //member inactive -> member active (Pr4/5)
+rule "Member back after sanction" //member inactive -> member active (Pr4/5)
 	ruleflow-group "exclude"
 	no-loop
 	when
@@ -469,7 +469,7 @@ rule "member back after sanction" //member inactive -> member active (Pr4/5)
 			 $level <= $i.maxSanctionLevel)
 		not Sanctioned(agent == $name, $rd : round, $rd > $sanRd)
 	then
-		if(Random.randomDouble() < 0.1){ //applyperc = 0.1; if agent wants to get back in this timestep, once allowed
+		if(Random.randomDouble() < 0.1){ //represents a strict acMethod (appliant members don't get in easily)
 			$member.changeBehaviour($i.getMaxSanctionLevel(), $s.getLevel());
 			modify ( $member ){
 				setActive(true)
@@ -478,7 +478,7 @@ rule "member back after sanction" //member inactive -> member active (Pr4/5)
 		}
 end
 
-rule "assign new head" //so far, head also governs if inactive!!
+rule "Assign new head" //so far, head also governs if inactive!!
 	ruleflow-group "exclude"
 	when
 		Institution($iid : id, $round : round)
